@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1388,214 +1388,2195 @@ Keep it to 2-3 paragraphs."</span></code></pre>
   </div>
 </section>
 
+
 <!-- ============================================ -->
 <!-- CHAPTER 10: EXERCISES -->
 <!-- ============================================ -->
 <section id="ch10">
   <h2><span class="ch-num">10.</span> Practice Exercises</h2>
-  <p class="ch-subtitle">Hands-on problems to solidify your understanding.</p>
+  <p class="ch-subtitle">55 problems organized by topic. Work through them in order or jump to your weak areas.</p>
 
-  <div class="exercise">
-    <div class="exercise-header">
-      <span class="exercise-badge">Exercise 1</span>
-      <span class="exercise-title">Trace answer set computation</span>
-    </div>
-    <p>Compute ALL answer sets for this program by hand:</p>
-    <pre><code><span class="fn">a</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">b</span>.
-<span class="fn">b</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">a</span>.
-<span class="fn">c</span> <span class="op">:-</span> <span class="fn">a</span>.
-<span class="fn">d</span> <span class="op">:-</span> <span class="fn">b</span>, <span class="op">not</span> <span class="fn">e</span>.
-<span class="fn">e</span> <span class="op">:-</span> <span class="fn">b</span>, <span class="op">not</span> <span class="fn">d</span>.</code></pre>
-    <button class="solution-toggle">Show Solution</button>
-    <div class="solution">
-      <p><strong>Answer Set 1:</strong> <code>{a, c}</code></p>
+  <div class="callout key">
+    <div class="callout-title">How to Use This Problem Set</div>
+    <p><strong>Section A</strong> (Prolog) builds foundation. <strong>Section B</strong> (ASP basics) is the core. <strong>Section C</strong> (ASP intermediate + s(CASP)) goes deeper. <strong>Section D</strong> (STAR framework &amp; applications) is the most interview-relevant &mdash; prioritize it if short on time.</p>
+  </div>
+
+  <h3>Section A: Prolog Foundations (A1&ndash;A13)</h3>
+<div class="quiz">
+  <p class="quiz-question"><strong>A1.</strong> Which of the following unifications <em>succeeds</em> in Prolog?</p>
+  <button class="quiz-option" data-correct="false">A) <code>foo(a, b) = foo(a, c)</code></button>
+  <button class="quiz-option" data-correct="false">B) <code>f(X, a) = f(b, X)</code></button>
+  <button class="quiz-option" data-correct="true">C) <code>g(X, f(Y)) = g(a, f(b))</code></button>
+  <button class="quiz-option" data-correct="false">D) <code>[H|T] = []</code></button>
+  <p class="quiz-explanation"><strong>C</strong> succeeds with <code>X = a</code> and <code>Y = b</code>. Option A fails because <code>b \= c</code>. Option B fails because <code>X</code> would need to be both <code>b</code> and <code>a</code> simultaneously. Option D fails because an empty list has no head or tail.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A2</span>
+    <span class="exercise-title">Unification Bindings</span>
+  </div>
+  <p>Given the following unification, what are the bindings for <code>X</code> and <code>Y</code>?</p>
+  <pre><code>?- f(X, g(Y)) = f(a, g(b)).</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>X = a
+Y = b</code></pre>
+    <p>Unification matches arguments position-by-position. The first argument <code>X</code> unifies with <code>a</code>, giving <code>X = a</code>. The second argument <code>g(Y)</code> unifies with <code>g(b)</code>: the functors match (<code>g/1</code>), so <code>Y</code> unifies with <code>b</code>, giving <code>Y = b</code>.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>A3.</strong> What happens when Prolog attempts the unification <code>p(X, X) = p(f(a), f(b))</code>?</p>
+  <button class="quiz-option" data-correct="false">A) Succeeds with <code>X = f(a)</code></button>
+  <button class="quiz-option" data-correct="true">B) Fails</button>
+  <button class="quiz-option" data-correct="false">C) Enters an infinite loop</button>
+  <button class="quiz-option" data-correct="false">D) Throws an instantiation error</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. Both arguments of <code>p/2</code> on the left are the same variable <code>X</code>. Unifying the first argument gives <code>X = f(a)</code>. Then the second argument requires <code>X = f(b)</code>. But <code>X</code> is already bound to <code>f(a)</code>, and <code>f(a) \= f(b)</code>, so unification fails.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A4</span>
+    <span class="exercise-title">Last Element of a List</span>
+  </div>
+  <p>Write a Prolog predicate <code>my_last(X, List)</code> that is true when <code>X</code> is the last element of <code>List</code>.</p>
+  <pre><code>% Example query:
+% ?- my_last(X, [a, b, c]).
+% X = c.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Base case: X is the last element of a single-element list
+my_last(X, [X]).
+
+% Recursive case: skip the head and check the tail
+my_last(X, [_|T]) :-
+    my_last(X, T).</code></pre>
+    <p>The base case matches when the list has exactly one element, unifying <code>X</code> with that element. The recursive case discards the head with <code>_</code> and recurses on the tail until a single-element list remains.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A5</span>
+    <span class="exercise-title">Nth Element of a List</span>
+  </div>
+  <p>Write a Prolog predicate <code>my_nth(N, List, X)</code> that is true when <code>X</code> is the <code>N</code>th element of <code>List</code> (1-indexed).</p>
+  <pre><code>% Example query:
+% ?- my_nth(2, [a, b, c], X).
+% X = b.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Base case: the 1st element is the head
+my_nth(1, [X|_], X).
+
+% Recursive case: decrement N and recurse on the tail
+my_nth(N, [_|T], X) :-
+    N > 1,
+    N1 is N - 1,
+    my_nth(N1, T, X).</code></pre>
+    <p>When <code>N</code> is 1, we unify <code>X</code> with the head of the list. Otherwise, we verify <code>N > 1</code> to prevent infinite recursion, decrement <code>N</code>, and recurse on the tail. This uses <code>is/2</code> for arithmetic evaluation.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A6</span>
+    <span class="exercise-title">Backtracking Through a Family Tree</span>
+  </div>
+  <p>Given the following program and query, what results does Prolog return (in order)?</p>
+  <pre><code>parent(tom, bob).
+parent(tom, liz).
+parent(bob, ann).
+parent(bob, pat).
+
+ancestor(X, Y) :- parent(X, Y).
+ancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).
+
+?- ancestor(tom, X).</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>X = bob ;
+X = liz ;
+X = ann ;
+X = pat.</code></pre>
+    <p>Prolog tries the first <code>ancestor</code> clause, which directly matches <code>parent(tom, X)</code>. This gives <code>X = bob</code> first (the first <code>parent</code> fact), then <code>X = liz</code> on backtracking. Next, Prolog tries the second <code>ancestor</code> clause: <code>parent(tom, Z)</code> binds <code>Z = bob</code>, then <code>ancestor(bob, X)</code> yields <code>X = ann</code> then <code>X = pat</code>. Backtracking to <code>Z = liz</code> finds no children for liz, so the search ends. The key insight is Prolog uses depth-first search, exploring each branch fully before backtracking.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>A7.</strong> Given the facts below and the query <code>?- color(X).</code>, in what order does Prolog return results?</p>
+  <pre><code>color(red).
+color(blue).
+color(green).</code></pre>
+  <button class="quiz-option" data-correct="false">A) Alphabetical order: blue, green, red</button>
+  <button class="quiz-option" data-correct="true">B) Order of definition: red, blue, green</button>
+  <button class="quiz-option" data-correct="false">C) Random order (non-deterministic)</button>
+  <button class="quiz-option" data-correct="false">D) Reverse order: green, blue, red</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. Prolog always tries clauses in the order they are defined in the program (top to bottom). This is fundamental to Prolog's search strategy: depth-first, left-to-right resolution using the textual order of clauses. This deterministic ordering is essential to understand for predicting Prolog's behavior.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A8</span>
+    <span class="exercise-title">List Append</span>
+  </div>
+  <p>Write the standard Prolog predicate <code>my_append(L1, L2, L3)</code> that is true when <code>L3</code> is the concatenation of <code>L1</code> and <code>L2</code>. Use exactly two clauses.</p>
+  <pre><code>% Example queries:
+% ?- my_append([a, b], [c, d], X).
+% X = [a, b, c, d].
+%
+% ?- my_append(X, Y, [1, 2, 3]).
+% X = [], Y = [1, 2, 3] ;
+% X = [1], Y = [2, 3] ;
+% X = [1, 2], Y = [3] ;
+% X = [1, 2, 3], Y = [].</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Base case: appending anything to [] gives that thing
+my_append([], L, L).
+
+% Recursive case: move head from L1 to L3, recurse on tails
+my_append([H|T1], L2, [H|T3]) :-
+    my_append(T1, L2, T3).</code></pre>
+    <p>The base case says appending <code>L</code> to an empty list yields <code>L</code>. The recursive case takes the head <code>H</code> of the first list, places it as the head of the result, and recursively appends the tail of the first list with the second list. This predicate is multi-directional: it can concatenate, split, or check list relationships.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A9</span>
+    <span class="exercise-title">List Reverse with Accumulator</span>
+  </div>
+  <p>Write <code>my_reverse(List, Reversed)</code> using an accumulator pattern. Define a helper predicate <code>rev_acc(List, Acc, Reversed)</code> that builds the reversed list in the accumulator.</p>
+  <pre><code>% Example query:
+% ?- my_reverse([a, b, c, d], X).
+% X = [d, c, b, a].</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Entry point: start with an empty accumulator
+my_reverse(List, Reversed) :-
+    rev_acc(List, [], Reversed).
+
+% Base case: when input is empty, accumulator holds the result
+rev_acc([], Acc, Acc).
+
+% Recursive case: move head to front of accumulator
+rev_acc([H|T], Acc, Reversed) :-
+    rev_acc(T, [H|Acc], Reversed).</code></pre>
+    <p>The accumulator pattern is a key Prolog technique. Instead of building the result on the way back from recursion (like naive reverse with <code>append</code>, which is O(n&sup2;)), we build it on the way down by prepending each head element to the accumulator. This gives O(n) performance. For <code>[a,b,c]</code>: the accumulator goes <code>[] -> [a] -> [b,a] -> [c,b,a]</code>.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A10</span>
+    <span class="exercise-title">Debug: Negation as Failure Ordering Bug</span>
+  </div>
+  <p>The following program is supposed to find students who need help (i.e., students who are not passing). But the query <code>?- needs_help(X).</code> returns <strong>no results</strong> when it should return <code>X = carol</code>. Find and fix the bug.</p>
+  <pre><code>student(alice).
+student(bob).
+student(carol).
+
+passing(alice).
+passing(bob).
+
+% BUG: this returns no results
+needs_help(X) :-
+    \+ passing(X),
+    student(X).</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% FIX: bind X first with student(X), then check negation
+needs_help(X) :-
+    student(X),
+    \+ passing(X).</code></pre>
+    <p>The bug is a classic Negation as Failure (NAF) ordering issue. In the buggy version, <code>\+ passing(X)</code> is called while <code>X</code> is still unbound. Prolog interprets <code>\+ passing(X)</code> as "it is not provable that something passes" &mdash; but <code>passing(alice)</code> exists, so <code>passing(X)</code> <em>does</em> succeed, meaning <code>\+ passing(X)</code> fails immediately. The fix is to bind <code>X</code> first via <code>student(X)</code>, then test <code>\+ passing(X)</code> with a ground value. <strong>Rule of thumb:</strong> always bind variables before applying negation.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A11</span>
+    <span class="exercise-title">Arithmetic Evaluation</span>
+  </div>
+  <p>What does Prolog return for each of the following queries? Pay attention to operator precedence.</p>
+  <pre><code>?- X is 3 + 4 * 2.
+
+?- Y is (3 + 4) * 2.
+
+?- Z is 10 // 3.
+
+?- W is 10 mod 3.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>X = 11.
+% Multiplication has higher precedence: 3 + (4 * 2) = 3 + 8 = 11
+
+Y = 14.
+% Parentheses override precedence: (3 + 4) * 2 = 7 * 2 = 14
+
+Z = 3.
+% Integer division: 10 // 3 = 3 (truncates toward zero)
+
+W = 1.
+% Modulo: 10 mod 3 = 1 (remainder after integer division)</code></pre>
+    <p>The <code>is/2</code> operator evaluates the arithmetic expression on the right and unifies the result with the left. Standard mathematical precedence applies: <code>*</code> and <code>/</code> bind tighter than <code>+</code> and <code>-</code>. Note that <code>is/2</code> requires the right side to be fully instantiated &mdash; all variables must be bound to numbers before evaluation, or Prolog throws an instantiation error.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>A12.</strong> In Prolog, what does <code>\+ p(X)</code> (negation as failure) mean?</p>
+  <button class="quiz-option" data-correct="false">A) <code>p(X)</code> is explicitly asserted to be false in the database</button>
+  <button class="quiz-option" data-correct="true">B) <code>p(X)</code> cannot be proven true from the current program</button>
+  <button class="quiz-option" data-correct="false">C) <code>p(X)</code> has never been asserted as a fact or rule</button>
+  <button class="quiz-option" data-correct="false">D) <code>p(X)</code> will evaluate to false in the future</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. Negation as Failure (NAF) is a key concept in logic programming. <code>\+ p(X)</code> succeeds when Prolog's proof search for <code>p(X)</code> <em>fails</em> &mdash; meaning it cannot be derived from the current facts and rules. This is the Closed World Assumption: anything not provable is assumed false. Option A is wrong because Prolog has no way to explicitly assert something is false. Option C is too narrow &mdash; <code>p(X)</code> might fail even if related facts exist (e.g., <code>p(a)</code> exists but <code>X</code> is bound to <code>b</code>).</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">A13</span>
+    <span class="exercise-title">Flatten a Nested List</span>
+  </div>
+  <p>Write a Prolog predicate <code>flatten(NestedList, FlatList)</code> that flattens an arbitrarily nested list into a single flat list.</p>
+  <pre><code>% Example queries:
+% ?- flatten([a, [b, [c, d]], e], X).
+% X = [a, b, c, d, e].
+%
+% ?- flatten([[1, 2], [3, [4, 5]]], X).
+% X = [1, 2, 3, 4, 5].
+%
+% ?- flatten([], X).
+% X = [].</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Base case: empty list flattens to empty list
+flatten([], []).
+
+% Recursive case 1: head is a list, flatten it and the tail
+flatten([H|T], Flat) :-
+    is_list(H),
+    flatten(H, FlatH),
+    flatten(T, FlatT),
+    append(FlatH, FlatT, Flat).
+
+% Recursive case 2: head is not a list, keep it and flatten the tail
+flatten([H|T], [H|FlatT]) :-
+    \+ is_list(H),
+    flatten(T, FlatT).</code></pre>
+    <p>This uses three clauses: a base case for empty lists, one clause for when the head is itself a list (recursively flatten both head and tail, then append), and one for when the head is an atom (keep it and flatten the tail). The <code>is_list/1</code> built-in checks whether a term is a list. Note the use of <code>\+ is_list(H)</code> in the third clause to ensure mutual exclusivity &mdash; without it, atoms could incorrectly match the second clause. This predicate relies on the built-in <code>append/3</code>.</p>
+  </div>
+</div>
+  <h3>Section B: ASP Fundamentals (B1&ndash;B13)</h3>
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B1</span>
+    <span class="exercise-title">Answer Sets with Default Negation</span>
+  </div>
+  <p>Compute <strong>all</strong> answer sets for the following ASP program:</p>
+  <pre><code>a :- not b.
+b :- not a.
+c :- a.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Answer Set 1: {a, c}
+% Answer Set 2: {b}</code></pre>
+    <p><strong>Explanation:</strong> The first two rules create a classic choice between <code>a</code> and <code>b</code> via default negation. If <code>b</code> is not in the answer set, then <code>a</code> must be, and vice versa. In Answer Set 1, <code>a</code> is true and <code>b</code> is not, so <code>c</code> fires because <code>a</code> holds. In Answer Set 2, <code>b</code> is true and <code>a</code> is not, so <code>c</code> does not fire. Both sets are minimal and supported.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B2</span>
+    <span class="exercise-title">Multiple Branching Answer Sets</span>
+  </div>
+  <p>Compute <strong>all</strong> answer sets for the following ASP program. How many are there?</p>
+  <pre><code>a :- not b.
+b :- not a.
+c :- a.
+d :- b, not e.
+e :- b, not d.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Answer Set 1: {a, c}
+% Answer Set 2: {b, d}
+% Answer Set 3: {b, e}</code></pre>
+    <p><strong>Explanation:</strong> There are <strong>3</strong> answer sets. The first branching point is between <code>a</code> and <code>b</code>. If <code>a</code> holds, then <code>c</code> follows and the rules for <code>d</code> and <code>e</code> do not fire (they require <code>b</code>). If <code>b</code> holds, then <code>c</code> does not fire, but we get a second branching point: <code>d</code> and <code>e</code> form their own default-negation pair (each blocks the other). So <code>b</code> yields two sub-cases: <code>{b, d}</code> and <code>{b, e}</code>.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>B3.</strong> Which of the following is a valid answer set for this program?</p>
+  <pre><code>p :- not q.
+q :- not p.
+r :- p.
+s :- q, not t.</code></pre>
+  <button class="quiz-option" data-correct="false">A) {p, q, r, s}</button>
+  <button class="quiz-option" data-correct="false">B) {p, r, s}</button>
+  <button class="quiz-option" data-correct="true">C) {q, s}</button>
+  <button class="quiz-option" data-correct="false">D) {p, s}</button>
+  <p class="quiz-explanation"><strong>Explanation:</strong> The program has two answer sets: <code>{p, r}</code> and <code>{q, s}</code>. Option A is invalid because <code>p</code> and <code>q</code> cannot both be true (each requires the other to be absent). Option B is invalid because <code>s</code> requires <code>q</code> which is not in the set. Option D is invalid because <code>s</code> requires <code>q</code>. Option C is correct: <code>q</code> holds because <code>p</code> is absent, and <code>s</code> holds because <code>q</code> is true and <code>t</code> is absent (nothing derives <code>t</code>).</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>B4.</strong> What does the integrity constraint <code>:- a, b.</code> mean in an ASP program?</p>
+  <button class="quiz-option" data-correct="false">A) a and b must both be true in every answer set</button>
+  <button class="quiz-option" data-correct="true">B) a and b cannot both be true in any answer set</button>
+  <button class="quiz-option" data-correct="false">C) a implies b</button>
+  <button class="quiz-option" data-correct="false">D) If a is true then b must be false, and if b is true then a must be false</button>
+  <p class="quiz-explanation"><strong>Explanation:</strong> An integrity constraint <code>:- a, b.</code> eliminates any candidate answer set in which both <code>a</code> and <code>b</code> are true simultaneously. It is read as "it cannot be the case that both <code>a</code> and <code>b</code> hold." Option D is subtly different from B: D implies a biconditional exclusion as two separate constraints, while the actual constraint only forbids the conjunction. For example, both <code>a</code> and <code>b</code> could independently be false, which is allowed by B but irrelevant to D's phrasing.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B5</span>
+    <span class="exercise-title">Choice Rules for Grading</span>
+  </div>
+  <p>Write a choice rule that assigns each student <strong>exactly one</strong> grade from <code>{pass, fail, incomplete}</code>. Use the following base facts:</p>
+  <pre><code>student(alice).
+student(bob).</code></pre>
+  <p>Each student must receive exactly one grade. The predicate should be <code>grade(Student, Grade)</code>.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>student(alice).
+student(bob).
+
+1 { grade(S, pass); grade(S, fail); grade(S, incomplete) } 1 :- student(S).</code></pre>
+    <p><strong>Explanation:</strong> The choice rule <code>1 { ... } 1 :- student(S).</code> states that for each student <code>S</code>, exactly one of the three grade options must be chosen. The lower bound <code>1</code> ensures at least one is picked, and the upper bound <code>1</code> ensures at most one is picked. This generates answer sets where each student has precisely one grade, for a total of 3 x 3 = 9 answer sets.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B6</span>
+    <span class="exercise-title">Integrity Constraint for Single Advisor</span>
+  </div>
+  <p>Write an integrity constraint that prevents any student from having more than one advisor. The predicate <code>advises(Prof, Student)</code> represents that a professor advises a student.</p>
+  <pre><code>% Example facts:
+advises(gupta, alice).
+advises(hall, alice).   % This should be disallowed!
+advises(gupta, bob).</code></pre>
+  <p>Write a constraint that eliminates any answer set where a single student has two different advisors.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% A student cannot have two different advisors
+:- advises(P1, S), advises(P2, S), P1 != P2.</code></pre>
+    <p><strong>Explanation:</strong> This integrity constraint fires whenever there exist two different professors <code>P1</code> and <code>P2</code> who both advise the same student <code>S</code>. Any answer set containing such a pair is eliminated. The condition <code>P1 != P2</code> ensures we are comparing distinct professors. With the example facts above, the program would have no answer sets because Alice has two advisors, violating the constraint.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B7</span>
+    <span class="exercise-title">Choice Rules Meet Constraints</span>
+  </div>
+  <p>What are <strong>all</strong> the answer sets for the following program?</p>
+  <pre><code>{ a ; b } = 1.
+:- b.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Answer Set 1: {a}</code></pre>
+    <p><strong>Explanation:</strong> The choice rule <code>{ a ; b } = 1.</code> says exactly one of <code>a</code> or <code>b</code> must be in the answer set. This generates two candidate answer sets: <code>{a}</code> and <code>{b}</code>. The integrity constraint <code>:- b.</code> eliminates any answer set containing <code>b</code>. Therefore, only <code>{a}</code> survives. There is exactly <strong>1</strong> answer set.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B8</span>
+    <span class="exercise-title">Aggregate Constraint with #count</span>
+  </div>
+  <p>Write ASP rules using <code>#count</code> to enforce that <strong>at least 2 students must pass</strong>. You are given the following base program:</p>
+  <pre><code>student(alice).
+student(bob).
+student(carol).
+
+% Each student either passes or fails
+{ pass(S) } :- student(S).</code></pre>
+  <p>Add a constraint so that every answer set has at least 2 students passing.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>student(alice).
+student(bob).
+student(carol).
+
+% Each student either passes or fails
+{ pass(S) } :- student(S).
+
+% At least 2 students must pass
+:- #count{ S : pass(S) } < 2.</code></pre>
+    <p><strong>Explanation:</strong> The constraint <code>:- #count{ S : pass(S) } &lt; 2.</code> eliminates any answer set where fewer than 2 students pass. The aggregate <code>#count{ S : pass(S) }</code> counts the number of distinct students <code>S</code> for which <code>pass(S)</code> is true. Without the constraint, there are 8 answer sets (each of 3 students can independently pass or not). With the constraint, only answer sets with 2 or 3 passing students remain: <code>{alice,bob}</code>, <code>{alice,carol}</code>, <code>{bob,carol}</code>, and <code>{alice,bob,carol}</code> &mdash; yielding 4 answer sets.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>B9.</strong> What does <code>#show recommend/1.</code> do in a Clingo program?</p>
+  <button class="quiz-option" data-correct="true">A) Filters output to only show atoms of the predicate <code>recommend</code> with arity 1</button>
+  <button class="quiz-option" data-correct="false">B) Hides all atoms of <code>recommend/1</code> from the output</button>
+  <button class="quiz-option" data-correct="false">C) Defines the predicate <code>recommend</code> with one argument</button>
+  <button class="quiz-option" data-correct="false">D) Imports the predicate <code>recommend/1</code> from an external module</button>
+  <p class="quiz-explanation"><strong>Explanation:</strong> The <code>#show</code> directive in Clingo controls which predicates appear in the printed answer sets. When you write <code>#show recommend/1.</code>, it tells Clingo to only display atoms of the predicate <code>recommend</code> that have exactly 1 argument. All other predicates are hidden from the output (unless they also have <code>#show</code> directives). The atoms are still computed internally; <code>#show</code> only affects what is displayed. This is useful for filtering large answer sets down to the predicates you care about.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B10</span>
+    <span class="exercise-title">Transitive Closure of a Graph</span>
+  </div>
+  <p>Given the following directed graph, write ASP rules to compute <code>reachable(X,Y)</code> representing the transitive closure &mdash; meaning <code>Y</code> is reachable from <code>X</code> through one or more edges.</p>
+  <pre><code>node(1..4).
+edge(1,2).
+edge(2,3).
+edge(3,4).
+edge(1,3).</code></pre>
+  <p>For example, <code>reachable(1,4)</code> should be true because 1 &rarr; 2 &rarr; 3 &rarr; 4.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>node(1..4).
+edge(1,2).
+edge(2,3).
+edge(3,4).
+edge(1,3).
+
+% Base case: direct edge means reachable
+reachable(X, Y) :- edge(X, Y).
+
+% Recursive case: if X can reach Z and Z can reach Y
+reachable(X, Y) :- reachable(X, Z), reachable(Z, Y).
+
+#show reachable/2.</code></pre>
+    <p><strong>Explanation:</strong> The base case derives <code>reachable(X,Y)</code> for every direct edge. The recursive rule chains reachability: if <code>X</code> can reach some intermediate node <code>Z</code>, and <code>Z</code> can reach <code>Y</code>, then <code>X</code> can reach <code>Y</code>. This computes the full transitive closure. The result includes: <code>reachable(1,2)</code>, <code>reachable(1,3)</code>, <code>reachable(1,4)</code>, <code>reachable(2,3)</code>, <code>reachable(2,4)</code>, <code>reachable(3,4)</code>. Note that <code>reachable(X,Y) :- reachable(X,Z), edge(Z,Y).</code> would also work as the recursive rule, but the version shown is more general.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B11</span>
+    <span class="exercise-title">Even and Odd Classification</span>
+  </div>
+  <p>Write ASP rules that compute <code>even(X)</code> and <code>odd(X)</code> for numbers 1 through 10. Use the following domain definition:</p>
+  <pre><code>num(1..10).</code></pre>
+  <p>A number is even if it is divisible by 2 with no remainder; otherwise it is odd. Use arithmetic in your rules.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>num(1..10).
+
+even(X) :- num(X), X \ 2 = 0.
+odd(X)  :- num(X), X \ 2 = 1.
+
+#show even/1.
+#show odd/1.</code></pre>
+    <p><strong>Explanation:</strong> In Clingo, the backslash <code>\</code> is the modulo operator. <code>X \ 2 = 0</code> checks if <code>X</code> is divisible by 2 (i.e., even), and <code>X \ 2 = 1</code> checks if it has a remainder of 1 (i.e., odd). The result is: <code>even(2), even(4), even(6), even(8), even(10)</code> and <code>odd(1), odd(3), odd(5), odd(7), odd(9)</code>. This program has exactly one answer set since there are no choice rules or default negation creating branching.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">B12</span>
+    <span class="exercise-title">Debug the #show Directive</span>
+  </div>
+  <p>The following ASP program has a bug. Identify the error and explain how to fix it.</p>
+  <pre><code>likes(X) :- food(X), not dislikes(X).
+dislikes(pizza).
+food(pizza).
+food(sushi).
+
+#show likes.</code></pre>
+  <p>When run in Clingo, the <code>#show</code> directive causes an error or unexpected behavior. What is wrong?</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>likes(X) :- food(X), not dislikes(X).
+dislikes(pizza).
+food(pizza).
+food(sushi).
+
+% FIXED: must specify the arity (number of arguments)
+#show likes/1.</code></pre>
+    <p><strong>Explanation:</strong> The <code>#show</code> directive requires you to specify the predicate's arity (the number of arguments it takes). Writing <code>#show likes.</code> without the arity is a syntax error in Clingo. Since <code>likes</code> takes one argument (a food item), the correct directive is <code>#show likes/1.</code> With this fix, the program correctly outputs <code>likes(sushi)</code> &mdash; because sushi is a food that is not disliked, while pizza is disliked and therefore excluded.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>B13.</strong> How many answer sets does the following program have?</p>
+  <pre><code>{a}.
+{b}.
+:- a, b.</code></pre>
+  <button class="quiz-option" data-correct="false">A) 0</button>
+  <button class="quiz-option" data-correct="false">B) 1</button>
+  <button class="quiz-option" data-correct="true">C) 3</button>
+  <button class="quiz-option" data-correct="false">D) 4</button>
+  <p class="quiz-explanation"><strong>Explanation:</strong> The choice rule <code>{a}.</code> means <code>a</code> can be either in or out of the answer set (0 or 1 occurrences). Similarly for <code>{b}.</code>. Without any constraint, this gives 4 candidate answer sets: <code>{}</code>, <code>{a}</code>, <code>{b}</code>, and <code>{a, b}</code>. The integrity constraint <code>:- a, b.</code> eliminates any answer set where both <code>a</code> and <code>b</code> are true, which removes <code>{a, b}</code>. The remaining <strong>3</strong> valid answer sets are: <code>{}</code> (neither chosen), <code>{a}</code> (only a chosen), and <code>{b}</code> (only b chosen).</p>
+</div>
+  <h3>Section C: ASP Intermediate &amp; s(CASP) (C1&ndash;C12)</h3>
+<!-- ============================================ -->
+<!-- C1: Graph 3-Coloring -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C1</span>
+    <span class="exercise-title">Graph 3-Coloring (Write Code)</span>
+  </div>
+  <p>Given the following graph with 4 nodes and 4 edges, write ASP rules to find all valid 3-colorings. You need two parts:</p>
+  <ol>
+    <li><strong>Generate:</strong> A choice rule that assigns exactly one color to each node.</li>
+    <li><strong>Test:</strong> An integrity constraint that forbids adjacent nodes from sharing a color.</li>
+  </ol>
+  <pre><code>% Facts (given)
+node(a). node(b). node(c). node(d).
+edge(a,b). edge(b,c). edge(c,d). edge(a,c).
+color(red). color(green). color(blue).</code></pre>
+  <p>Your program should produce answer sets where each node has exactly one color and no two connected nodes share a color.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Facts
+node(a). node(b). node(c). node(d).
+edge(a,b). edge(b,c). edge(c,d). edge(a,c).
+color(red). color(green). color(blue).
+
+% Generate: assign exactly one color to each node
+% The 1{...}1 means "choose at least 1 and at most 1"
+1 { assign(N, C) : color(C) } 1 :- node(N).
+
+% Test: no two adjacent nodes may share the same color
+:- edge(N1, N2), assign(N1, C), assign(N2, C).
+
+#show assign/2.</code></pre>
+    <p><strong>Explanation:</strong> The choice rule <code>1 { assign(N,C) : color(C) } 1 :- node(N).</code> generates exactly one color assignment per node. The integrity constraint <code>:- edge(N1,N2), assign(N1,C), assign(N2,C).</code> eliminates any answer set where two adjacent nodes share a color. Together, generate-and-test finds all valid 3-colorings. For this graph, there are 18 valid colorings (the graph is 3-colorable).</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- C2: N-Queens (4x4) -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C2</span>
+    <span class="exercise-title">N-Queens on a 4x4 Board (Write Code)</span>
+  </div>
+  <p>Write ASP rules for the 4-Queens problem. Place 4 queens on a 4x4 chessboard such that no two queens attack each other.</p>
+  <ol>
+    <li><strong>Generate:</strong> Place exactly one queen in each row (rows 1&ndash;4, columns 1&ndash;4).</li>
+    <li><strong>Test:</strong> Write integrity constraints to ensure:
       <ul>
-        <li>a is true (because not b holds &mdash; b has no support)</li>
-        <li>c is true (because a is true)</li>
-        <li>b is false (not a fails since a is true)</li>
-        <li>d and e don't fire (they need b)</li>
+        <li>No two queens share the same column.</li>
+        <li>No two queens share the same diagonal (both directions).</li>
       </ul>
-      <p><strong>Answer Set 2:</strong> <code>{b, d}</code></p>
-      <ul>
-        <li>b is true (because not a holds &mdash; a has no support here)</li>
-        <li>d is true (b is true and not e holds)</li>
-        <li>e is false (not d fails since d is true)</li>
-      </ul>
-      <p><strong>Answer Set 3:</strong> <code>{b, e}</code></p>
-      <ul>
-        <li>b is true (because not a holds)</li>
-        <li>e is true (b is true and not d holds)</li>
-        <li>d is false (not e fails since e is true)</li>
-      </ul>
-      <p>Three answer sets total. Notice how the choice between d and e mirrors the choice between a and b &mdash; both are cases where two rules depend on each other's negation.</p>
-    </div>
+    </li>
+  </ol>
+  <p><em>Hint:</em> Two queens at <code>(R1,C1)</code> and <code>(R2,C2)</code> are on the same diagonal if <code>|R1-R2| = |C1-C2|</code>.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Domain
+row(1..4).
+col(1..4).
+
+% Generate: place exactly one queen per row
+1 { queen(R, C) : col(C) } 1 :- row(R).
+
+% Test: no two queens in the same column
+:- queen(R1, C), queen(R2, C), R1 != R2.
+
+% Test: no two queens on the same diagonal (both directions)
+:- queen(R1, C1), queen(R2, C2), R1 != R2,
+   |R1 - R2| == |C1 - C2|.
+
+#show queen/2.</code></pre>
+    <p><strong>Explanation:</strong> The generate rule ensures each row has exactly one queen. The three integrity constraints prune answer sets where queens conflict. The 4-Queens problem has exactly 2 solutions:</p>
+    <pre><code>% Solution 1: queen(1,2) queen(2,4) queen(3,1) queen(4,3)
+%   . Q . .
+%   . . . Q
+%   Q . . .
+%   . . Q .
+
+% Solution 2: queen(1,3) queen(2,1) queen(3,4) queen(4,2)
+%   . . Q .
+%   Q . . .
+%   . . . Q
+%   . Q . .</code></pre>
   </div>
+</div>
 
-  <div class="exercise">
-    <div class="exercise-header">
-      <span class="exercise-badge">Exercise 2</span>
-      <span class="exercise-title">Write integrity constraints</span>
-    </div>
-    <p>Write ASP constraints that enforce these rules for a coaching chatbot:</p>
-    <ol>
-      <li>Never discuss more than 2 topics in one session</li>
-      <li>If the child is under 5, only recommend "simple" strategies</li>
-      <li>Cannot recommend a strategy and its opposite simultaneously</li>
-      <li>Every response in strategy phase must include at least one actionable step</li>
-    </ol>
-    <button class="solution-toggle">Show Solution</button>
-    <div class="solution">
-      <pre><code><span class="cm">% 1. Max 2 topics per session</span>
-<span class="fn">topic_count</span>(<span class="var">N</span>) <span class="op">:-</span> <span class="var">N</span> = <span class="kw">#count</span>{ <span class="var">T</span> : <span class="fn">active_topic</span>(<span class="var">T</span>) }.
-<span class="op">:-</span> <span class="fn">topic_count</span>(<span class="var">N</span>), <span class="var">N</span> <span class="op">&gt;</span> <span class="num">2</span>.
-
-<span class="cm">% 2. Under-5: only simple strategies</span>
-<span class="fn">young_child</span>(<span class="var">C</span>) <span class="op">:-</span> <span class="fn">child_age</span>(<span class="var">C</span>, <span class="var">A</span>), <span class="var">A</span> <span class="op">&lt;</span> <span class="num">5</span>.
-<span class="op">:-</span> <span class="fn">recommend</span>(<span class="var">S</span>), <span class="fn">young_child</span>(<span class="var">_</span>), <span class="op">not</span> <span class="fn">simple_strategy</span>(<span class="var">S</span>).
-<span class="fn">simple_strategy</span>(<span class="st">visual_schedule</span>).
-<span class="fn">simple_strategy</span>(<span class="st">first_then</span>).
-<span class="fn">simple_strategy</span>(<span class="st">countdown</span>).
-
-<span class="cm">% 3. Cannot recommend opposites</span>
-<span class="fn">opposite</span>(<span class="st">strict_schedule</span>, <span class="st">flexible_approach</span>).
-<span class="fn">opposite</span>(<span class="var">A</span>, <span class="var">B</span>) <span class="op">:-</span> <span class="fn">opposite</span>(<span class="var">B</span>, <span class="var">A</span>). <span class="cm">% symmetric</span>
-<span class="op">:-</span> <span class="fn">recommend</span>(<span class="var">A</span>), <span class="fn">recommend</span>(<span class="var">B</span>), <span class="fn">opposite</span>(<span class="var">A</span>, <span class="var">B</span>).
-
-<span class="cm">% 4. Strategy phase needs action steps</span>
-<span class="op">:-</span> <span class="fn">current_phase</span>(<span class="st">strategy</span>), <span class="op">not</span> <span class="fn">has_action_step</span>.
-<span class="fn">has_action_step</span> <span class="op">:-</span> <span class="fn">action_step</span>(<span class="var">_</span>).</code></pre>
-    </div>
+<!-- ============================================ -->
+<!-- C3: Default Reasoning - Birds Fly -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C3</span>
+    <span class="exercise-title">Default Reasoning &mdash; Birds Fly (Write Code)</span>
   </div>
+  <p>Encode the following common-sense knowledge in ASP using default reasoning:</p>
+  <ul>
+    <li>Birds fly <em>by default</em> (unless there is a reason they don't).</li>
+    <li>Penguins are birds, but penguins don't fly (they are <em>abnormal</em> with respect to flying).</li>
+    <li>Injured birds don't fly (also <em>abnormal</em>).</li>
+  </ul>
+  <p>Given these facts:</p>
+  <pre><code>bird(tweety). bird(opus). penguin(tux). bird(tux). injured(opus).</code></pre>
+  <p>Write the rules so that querying <code>flies/1</code> produces the correct results. Which birds fly?</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Facts
+bird(tweety).
+bird(opus).
+penguin(tux).
+bird(tux).
+injured(opus).
 
-  <div class="exercise">
-    <div class="exercise-header">
-      <span class="exercise-badge">Exercise 3</span>
-      <span class="exercise-title">Design a predicate vocabulary</span>
-    </div>
-    <p>Design the predicate vocabulary for a chatbot that coaches parents on <strong>bedtime routines</strong>. Include predicates for: the child's current bedtime behavior, the family's schedule constraints, tried strategies, emotional state, and environmental factors. Write the LLM system prompt that constrains extraction to this vocabulary.</p>
-    <button class="solution-toggle">Show Solution</button>
-    <div class="solution">
-      <pre><code><span class="cm">% Predicate vocabulary for bedtime coaching</span>
+% Default rule: birds fly unless abnormal
+flies(X) :- bird(X), not ab(X).
 
-<span class="cm">% Child behavior</span>
-<span class="fn">bedtime_behavior</span>(<span class="var">Child</span>, <span class="var">Behavior</span>).
-<span class="cm">%   Behaviors: resists_bed, stalls, gets_up_repeatedly,</span>
-<span class="cm">%   cant_fall_asleep, night_waking, early_waking</span>
+% Penguins are abnormal (don't fly)
+ab(X) :- penguin(X).
 
-<span class="cm">% Schedule</span>
-<span class="fn">target_bedtime</span>(<span class="var">Child</span>, <span class="var">Time</span>).
-<span class="fn">actual_bedtime</span>(<span class="var">Child</span>, <span class="var">Time</span>).
-<span class="fn">wake_time</span>(<span class="var">Child</span>, <span class="var">Time</span>).
-<span class="fn">has_school_next_day</span>(<span class="var">Child</span>).
+% Injured birds are abnormal (don't fly)
+ab(X) :- injured(X).
 
-<span class="cm">% Strategies tried</span>
-<span class="fn">tried</span>(<span class="var">Parent</span>, <span class="var">Strategy</span>).
-<span class="fn">outcome</span>(<span class="var">Strategy</span>, <span class="var">Result</span>). <span class="cm">% positive | negative | neutral</span>
-
-<span class="cm">% Emotional state</span>
-<span class="fn">child_emotion_at_bedtime</span>(<span class="var">Child</span>, <span class="var">Emotion</span>).
-<span class="cm">%   Emotions: anxious, hyper, calm, tired, angry</span>
-<span class="fn">parent_emotion</span>(<span class="var">Parent</span>, <span class="var">Emotion</span>).
-
-<span class="cm">% Environment</span>
-<span class="fn">screen_before_bed</span>(<span class="var">Child</span>).
-<span class="fn">shares_room</span>(<span class="var">Child</span>).
-<span class="fn">has_nightlight</span>(<span class="var">Child</span>).
-<span class="fn">noise_level</span>(<span class="var">Level</span>). <span class="cm">% quiet | moderate | noisy</span></code></pre>
-
-      <pre><code><span class="cm">LLM System Prompt:</span>
-<span class="st">"You are a semantic parser for a bedtime coaching chatbot.
-Convert the parent's message into ONLY these predicates:
-
-- bedtime_behavior(ChildName, Behavior)
-  Behavior: resists_bed | stalls | gets_up_repeatedly |
-            cant_fall_asleep | night_waking | early_waking
-- target_bedtime(ChildName, Time)
-- actual_bedtime(ChildName, Time)
-- wake_time(ChildName, Time)
-- has_school_next_day(ChildName)
-- tried(ParentName, Strategy)
-- outcome(Strategy, positive | negative | neutral)
-- child_emotion_at_bedtime(ChildName, Emotion)
-  Emotion: anxious | hyper | calm | tired | angry
-- parent_emotion(ParentName, Emotion)
-  Emotion: frustrated | exhausted | hopeful | overwhelmed
-- screen_before_bed(ChildName)
-- shares_room(ChildName)
-- has_nightlight(ChildName)
-- noise_level(quiet | moderate | noisy)
-
-Rules:
-- Output ONLY valid predicates from the list above
-- One predicate per line
-- Use lowercase for names
-- If information is ambiguous, extract what's clear
-- Do NOT infer or assume what wasn't stated"</span></code></pre>
-    </div>
+#show flies/1.</code></pre>
+    <p><strong>Answer set:</strong> <code>{ flies(tweety) }</code></p>
+    <p><strong>Explanation:</strong></p>
+    <ul>
+      <li><strong>tweety:</strong> bird, not a penguin, not injured &rarr; <code>not ab(tweety)</code> succeeds &rarr; <strong>flies</strong></li>
+      <li><strong>opus:</strong> bird, but injured &rarr; <code>ab(opus)</code> is true &rarr; <strong>does not fly</strong></li>
+      <li><strong>tux:</strong> bird, but penguin &rarr; <code>ab(tux)</code> is true &rarr; <strong>does not fly</strong></li>
+    </ul>
+    <p>This is the classic <strong>abnormality pattern</strong> in ASP: state the default with a <code>not ab(X)</code> guard, then define what counts as abnormal. It's the foundation of nonmonotonic reasoning &mdash; adding a fact like <code>injured(tweety).</code> would retract the conclusion that tweety flies.</p>
   </div>
+</div>
 
-  <div class="exercise">
-    <div class="exercise-header">
-      <span class="exercise-badge">Exercise 4</span>
-      <span class="exercise-title">Full pipeline trace</span>
-    </div>
-    <p>Trace the complete STAR pipeline for this input:<br>
-    <em>"My daughter Emma is 6. She has terrible meltdowns every time we try to leave the house. We've tried counting down from 10 but she just screams louder. I'm so exhausted."</em></p>
-    <p>Show: (1) extracted predicates, (2) ASP reasoning with rules, (3) response predicates, (4) sketch of natural language output.</p>
-    <button class="solution-toggle">Show Solution</button>
-    <div class="solution">
-      <p><strong>Layer 1: Predicate Extraction (LLM)</strong></p>
-      <pre><code><span class="fn">child</span>(<span class="st">user</span>, <span class="st">emma</span>).
-<span class="fn">child_age</span>(<span class="st">emma</span>, <span class="num">6</span>).
-<span class="fn">challenge</span>(<span class="st">emma</span>, <span class="st">transitions</span>).
-<span class="fn">behavior</span>(<span class="st">meltdown</span>).
-<span class="fn">context</span>(<span class="st">leaving_house</span>).
-<span class="fn">tried</span>(<span class="st">user</span>, <span class="st">countdown</span>).
-<span class="fn">outcome</span>(<span class="st">countdown</span>, <span class="st">negative</span>).
-<span class="fn">parent_emotion</span>(<span class="st">user</span>, <span class="st">exhausted</span>).</code></pre>
-
-      <p><strong>Layer 2: ASP Reasoning</strong></p>
-      <pre><code><span class="cm">% Intake check: have age, challenge, behavior --> intake_done</span>
-<span class="fn">intake_done</span>.
-<span class="fn">current_phase</span>(<span class="st">strategy</span>).
-
-<span class="cm">% Topic mapping</span>
-<span class="fn">relevant_topic</span>(<span class="st">transitions</span>). <span class="cm">% from challenge</span>
-<span class="fn">relevant_topic</span>(<span class="st">emotional_regulation</span>). <span class="cm">% from behavior(meltdown)</span>
-
-<span class="cm">% Strategy matching</span>
-<span class="fn">applicable</span>(<span class="st">countdown</span>). <span class="cm">% for transitions</span>
-<span class="fn">applicable</span>(<span class="st">transition_object</span>). <span class="cm">% for transitions</span>
-<span class="fn">applicable</span>(<span class="st">calm_corner</span>). <span class="cm">% for emotional_regulation</span>
-<span class="fn">applicable</span>(<span class="st">emotion_naming</span>). <span class="cm">% for emotional_regulation</span>
-
-<span class="cm">% Blocking</span>
-<span class="fn">blocked</span>(<span class="st">countdown</span>). <span class="cm">% tried, negative outcome</span>
-
-<span class="cm">% Final recommendations</span>
-<span class="fn">recommend</span>(<span class="st">transition_object</span>).
-<span class="fn">recommend</span>(<span class="st">calm_corner</span>).
-<span class="fn">recommend</span>(<span class="st">emotion_naming</span>).
-
-<span class="cm">% Meta</span>
-<span class="fn">acknowledge</span>(<span class="st">exhaustion</span>). <span class="cm">% parent_emotion detected</span>
-<span class="fn">safe_response</span>(<span class="st">true</span>). <span class="cm">% no crisis indicators</span></code></pre>
-
-      <p><strong>Layer 3: Response Generation (LLM)</strong></p>
-      <p><em>"I hear you &mdash; dealing with meltdowns when you're trying to get out the door is incredibly draining, and it makes sense that you're feeling exhausted.</em></p>
-      <p><em>Since the countdown approach hasn't been working for Emma, here are a couple of things that might help with leaving-the-house transitions:</em></p>
-      <p><em>A <strong>Transition Object</strong> &mdash; let Emma pick a small comfort item she can bring along. Having something familiar can ease the shift from 'home' to 'outside.'</em></p>
-      <p><em>Before transitions, try <strong>Emotion Naming</strong> &mdash; help Emma identify what she's feeling ('It looks like you're feeling worried about leaving'). This helps kids feel understood and can reduce the intensity of meltdowns.</em></p>
-      <p><em>You might also set up a <strong>Calm-Down Corner</strong> at home where Emma can go when she feels overwhelmed, which she can use before you need to head out."</em></p>
-    </div>
+<!-- ============================================ -->
+<!-- C4: Optimization - Worker-Task Assignment -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C4</span>
+    <span class="exercise-title">Optimization &mdash; Cheapest Worker-Task Assignment (Write Code)</span>
   </div>
+  <p>Write an ASP program using <code>#minimize</code> to find the cheapest assignment of workers to tasks. Rules:</p>
+  <ul>
+    <li>Each task must be assigned exactly one worker.</li>
+    <li>Each worker can be assigned at most one task.</li>
+    <li>Minimize the total cost.</li>
+  </ul>
+  <pre><code>% Given facts
+worker(a). worker(b).
+task(1). task(2).
+cost(a, 1, 5). cost(a, 2, 8).
+cost(b, 1, 7). cost(b, 2, 3).</code></pre>
+  <p>What is the optimal assignment and its total cost?</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Facts
+worker(a). worker(b).
+task(1). task(2).
+cost(a, 1, 5). cost(a, 2, 8).
+cost(b, 1, 7). cost(b, 2, 3).
 
+% Generate: assign exactly one worker per task
+1 { assign(W, T) : worker(W) } 1 :- task(T).
+
+% Each worker gets at most one task
+:- assign(W, T1), assign(W, T2), T1 != T2.
+
+% Minimize total cost
+#minimize { C,W,T : assign(W,T), cost(W,T,C) }.
+
+#show assign/2.</code></pre>
+    <p><strong>All feasible assignments:</strong></p>
+    <ul>
+      <li><code>assign(a,1), assign(b,2)</code> &rarr; cost = 5 + 3 = <strong>8</strong></li>
+      <li><code>assign(a,2), assign(b,1)</code> &rarr; cost = 8 + 7 = 15</li>
+    </ul>
+    <p><strong>Optimal:</strong> <code>{ assign(a,1), assign(b,2) }</code> with total cost <strong>8</strong>.</p>
+    <p><strong>Key detail:</strong> In the <code>#minimize</code> directive, the tuple <code>C,W,T</code> serves as a unique identifier for each cost contribution. Without <code>W,T</code> in the tuple, duplicate cost values would only be counted once. The syntax is <code>#minimize { weight,id_terms : condition }.</code></p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- C5: MC - not vs -p -->
+<!-- ============================================ -->
+<div class="quiz">
+  <p class="quiz-question"><strong>C5.</strong> What is the difference between <code>not p</code> and <code>-p</code> in ASP?</p>
+  <button class="quiz-option" data-correct="false">A) They are identical &mdash; both mean "p is false"</button>
+  <button class="quiz-option" data-correct="true">B) <code>not p</code> = negation as failure (we cannot prove p); <code>-p</code> = strong/classical negation (p is explicitly false)</button>
+  <button class="quiz-option" data-correct="false">C) <code>not p</code> is stronger than <code>-p</code></button>
+  <button class="quiz-option" data-correct="false">D) <code>-p</code> is negation as failure; <code>not p</code> is classical negation</button>
+  <p class="quiz-explanation"><strong>Correct: B.</strong> These are fundamentally different. <code>not p</code> (negation as failure / default negation) means "there is no evidence that p is true" &mdash; it succeeds when p cannot be derived. <code>-p</code> (strong/classical negation) means "p is explicitly known to be false" &mdash; it requires a rule or fact that derives <code>-p</code>. The distinction matters: in an open world, <code>not p</code> may hold (no info about p) while <code>-p</code> does not (nobody said p is false). ASP supports both, enabling nuanced reasoning about the difference between "unknown" and "known false."</p>
+</div>
+
+<!-- ============================================ -->
+<!-- C6: What's the Output - Two Negations -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C6</span>
+    <span class="exercise-title">What's the Output &mdash; Two Kinds of Negation (Trace)</span>
+  </div>
+  <p>Given the following ASP program that uses both default negation (<code>not</code>) and classical negation (<code>-</code>), determine the answer sets:</p>
+  <pre><code>p :- not -p.
+-p :- not p.
+q :- p, not r.
+r :- -p.</code></pre>
+  <p>How many answer sets are there? What are they?</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <p><strong>There are 2 answer sets:</strong></p>
+    <pre><code>% Answer Set 1: { p, q }
+% Answer Set 2: { -p, r }</code></pre>
+    <p><strong>Trace for Answer Set 1: { p, q }</strong></p>
+    <ul>
+      <li>Assume <code>p</code> is true.</li>
+      <li>Rule 1: <code>p :- not -p.</code> &mdash; Is <code>-p</code> derivable? No (we have <code>p</code>, not <code>-p</code>). So <code>not -p</code> holds. <code>p</code> is supported.</li>
+      <li>Rule 2: <code>-p :- not p.</code> &mdash; Is <code>p</code> derivable? Yes. So <code>not p</code> fails. <code>-p</code> is not derived.</li>
+      <li>Rule 3: <code>q :- p, not r.</code> &mdash; <code>p</code> is true. Is <code>r</code> derivable? <code>r</code> needs <code>-p</code>, which is not derived. So <code>not r</code> holds. <code>q</code> is derived.</li>
+      <li>Rule 4: <code>r :- -p.</code> &mdash; <code>-p</code> is not true. <code>r</code> is not derived.</li>
+      <li>Stable check passes: <strong>{ p, q }</strong> is an answer set.</li>
+    </ul>
+    <p><strong>Trace for Answer Set 2: { -p, r }</strong></p>
+    <ul>
+      <li>Assume <code>-p</code> is true (p is explicitly false).</li>
+      <li>Rule 2: <code>-p :- not p.</code> &mdash; Is <code>p</code> derivable? No. So <code>not p</code> holds. <code>-p</code> is supported.</li>
+      <li>Rule 1: <code>p :- not -p.</code> &mdash; Is <code>-p</code> derivable? Yes. So <code>not -p</code> fails. <code>p</code> is not derived.</li>
+      <li>Rule 4: <code>r :- -p.</code> &mdash; <code>-p</code> is true. <code>r</code> is derived.</li>
+      <li>Rule 3: <code>q :- p, not r.</code> &mdash; <code>p</code> is not true. <code>q</code> is not derived.</li>
+      <li>Stable check passes: <strong>{ -p, r }</strong> is an answer set.</li>
+    </ul>
+    <p><strong>Key insight:</strong> This program demonstrates how the two negations interact. In Answer Set 1, <code>p</code> is true by default (we can't prove <code>-p</code>), and <code>q</code> follows. In Answer Set 2, <code>p</code> is explicitly false, so <code>r</code> is derived instead. Notice that <code>p</code> and <code>-p</code> cannot both be in the same answer set (that would be a contradiction), so we get two consistent worlds.</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- C7: Aggregate - Knapsack Weight Constraint -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C7</span>
+    <span class="exercise-title">Aggregate Constraint &mdash; Knapsack Weight Limit (Write Code)</span>
+  </div>
+  <p>You have a set of items, each with a weight. A subset can be selected. Write an ASP constraint using the <code>#sum</code> aggregate to ensure the total weight of selected items does not exceed a capacity of 15.</p>
+  <pre><code>% Given
+item(a, 5). item(b, 8). item(c, 4). item(d, 6).
+
+% Already provided: generate any subset
+{ selected(I) : item(I, _) }.</code></pre>
+  <p>Write the integrity constraint that enforces the weight limit. Then: what is the largest set of items that fits?</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Items with weights
+item(a, 5). item(b, 8). item(c, 4). item(d, 6).
+
+% Generate: select any subset of items
+{ selected(I) : item(I, _) }.
+
+% Test: total weight must not exceed capacity 15
+:- #sum { W,I : selected(I), item(I, W) } > 15.
+
+#show selected/1.</code></pre>
+    <p><strong>Explanation:</strong> The constraint <code>:- #sum { W,I : selected(I), item(I,W) } > 15.</code> eliminates any answer set where the sum of weights exceeds 15. The tuple <code>W,I</code> ensures each item is counted separately (if two items had the same weight, using just <code>W</code> would count them once).</p>
+    <p><strong>Valid subsets and their weights:</strong></p>
+    <pre><code>% {}                     = 0   (valid)
+% {a}                   = 5   (valid)
+% {b}                   = 8   (valid)
+% {c}                   = 4   (valid)
+% {d}                   = 6   (valid)
+% {a,b}                 = 13  (valid)
+% {a,c}                 = 9   (valid)
+% {a,d}                 = 11  (valid)
+% {b,c}                 = 12  (valid)
+% {b,d}                 = 14  (valid)
+% {c,d}                 = 10  (valid)
+% {a,b,c}               = 17  (INVALID - exceeds 15)
+% {a,b,d}               = 19  (INVALID)
+% {a,c,d}               = 15  (valid - exactly at capacity)
+% {b,c,d}               = 18  (INVALID)
+% {a,b,c,d}             = 23  (INVALID)</code></pre>
+    <p><strong>Largest valid set:</strong> <code>{ selected(a), selected(c), selected(d) }</code> with total weight 15 (3 items).</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- C8: MC - s(CASP) Justification Tree -->
+<!-- ============================================ -->
+<div class="quiz">
+  <p class="quiz-question"><strong>C8.</strong> In s(CASP), what is a justification tree?</p>
+  <button class="quiz-option" data-correct="false">A) A binary search tree used to index facts for fast lookup</button>
+  <button class="quiz-option" data-correct="true">B) A human-readable proof trace showing why a conclusion holds, including which rules fired and how negation-as-failure goals succeeded</button>
+  <button class="quiz-option" data-correct="false">C) The abstract syntax tree (AST) of the s(CASP) program</button>
+  <button class="quiz-option" data-correct="false">D) A decision tree used for classification tasks within s(CASP)</button>
+  <p class="quiz-explanation"><strong>Correct: B.</strong> A justification tree is one of s(CASP)'s most powerful features. When s(CASP) proves a query, it can generate a tree-structured explanation showing: (1) which rules were used, (2) which subgoals were proven and how, (3) why negation-as-failure goals succeeded (i.e., what was searched for and not found). This makes s(CASP) outputs <strong>explainable</strong> &mdash; critical in domains like healthcare where you need to justify why a chatbot gave a particular recommendation. The justification tree can even be rendered in natural language using s(CASP)'s built-in translation capabilities.</p>
+</div>
+
+<!-- ============================================ -->
+<!-- C9: MC - s(CASP) vs Clingo -->
+<!-- ============================================ -->
+<div class="quiz">
+  <p class="quiz-question"><strong>C9.</strong> What is the key difference between s(CASP) and Clingo?</p>
+  <button class="quiz-option" data-correct="false">A) s(CASP) is faster than Clingo for all problem types</button>
+  <button class="quiz-option" data-correct="true">B) s(CASP) is top-down and goal-directed (like Prolog) while Clingo is bottom-up, grounding-then-solving</button>
+  <button class="quiz-option" data-correct="false">C) Clingo supports negation as failure but s(CASP) does not</button>
+  <button class="quiz-option" data-correct="false">D) s(CASP) only works as a Python library; Clingo works standalone</button>
+  <p class="quiz-explanation"><strong>Correct: B.</strong> This is the fundamental architectural difference. <strong>Clingo</strong> (the most popular ASP solver) uses a <em>ground-and-solve</em> approach: it first instantiates all rules with all possible constants (grounding), then uses a SAT-like solver to find answer sets. <strong>s(CASP)</strong> takes a <em>goal-directed, top-down</em> approach like Prolog: given a query, it works backward through rules to prove it, without needing to ground the entire program. This means s(CASP) can handle programs with infinite domains (e.g., integers), produce justification trees for individual queries, and work incrementally &mdash; all advantages that make it well-suited for conversational AI where you query specific things rather than computing all possible answer sets.</p>
+</div>
+
+<!-- ============================================ -->
+<!-- C10: s(CASP) - Food Safety -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C10</span>
+    <span class="exercise-title">s(CASP) &mdash; Food Safety Recommender (Write Code)</span>
+  </div>
+  <p>Write an s(CASP) program (using Prolog-style syntax) that determines if a food is safe to recommend. The rules are:</p>
+  <ul>
+    <li>A food is <strong>safe</strong> if it is a known food, it is <strong>not</strong> an allergen, and it is <strong>not</strong> expired.</li>
+    <li>Use <code>not</code> (negation as failure) for the default safety assumption.</li>
+  </ul>
+  <pre><code>% Given facts
+food(apple). food(peanuts). food(milk).
+allergen(peanuts).
+expired(milk).</code></pre>
+  <p>Write the <code>safe/1</code> rule. Which foods are safe? Which are not, and why?</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% s(CASP) program - Prolog-style syntax
+% (no grounding needed - s(CASP) is goal-directed)
+
+% Facts
+food(apple).
+food(peanuts).
+food(milk).
+allergen(peanuts).
+expired(milk).
+
+% Rule: a food is safe if it's not an allergen and not expired
+safe(X) :- food(X), not allergen(X), not expired(X).
+
+% Queries:
+% ?- safe(apple).     --> YES
+% ?- safe(peanuts).   --> NO (allergen)
+% ?- safe(milk).      --> NO (expired)
+% ?- safe(banana).    --> NO (not a known food)</code></pre>
+    <p><strong>Results:</strong></p>
+    <ul>
+      <li><code>safe(apple)</code>: <strong>YES</strong> &mdash; apple is a food, not an allergen, not expired.</li>
+      <li><code>safe(peanuts)</code>: <strong>NO</strong> &mdash; peanuts is an allergen, so <code>not allergen(peanuts)</code> fails.</li>
+      <li><code>safe(milk)</code>: <strong>NO</strong> &mdash; milk is expired, so <code>not expired(milk)</code> fails.</li>
+    </ul>
+    <p><strong>Key s(CASP) advantage:</strong> Unlike Clingo, s(CASP) doesn't need to ground the program. You can query <code>?- safe(X).</code> and it will find <code>X = apple</code> directly through goal-directed search. It can also explain <em>why</em> peanuts are not safe via a justification tree.</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- C11: Justification Tree Trace -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C11</span>
+    <span class="exercise-title">Trace the Justification Tree for <code>?- safe(apple)</code> (Trace)</span>
+  </div>
+  <p>Using the s(CASP) program from C10, trace the justification tree that s(CASP) would produce for the query <code>?- safe(apple).</code></p>
+  <p>Show each step of the goal-directed proof, including how negation-as-failure goals are resolved.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Query: ?- safe(apple).
+
+% Step 1: Match safe(apple) against rule head
+%   safe(X) :- food(X), not allergen(X), not expired(X).
+%   Unify X = apple
+%   Subgoals: food(apple), not allergen(apple), not expired(apple)
+
+% Step 2: Prove food(apple)
+%   food(apple) is a fact. SUCCESS.
+
+% Step 3: Prove not allergen(apple)
+%   Attempt to prove allergen(apple)...
+%   Check all allergen/1 facts: allergen(peanuts).
+%   apple != peanuts. No matching fact or rule.
+%   allergen(apple) FAILS.
+%   Therefore not allergen(apple) SUCCEEDS.
+
+% Step 4: Prove not expired(apple)
+%   Attempt to prove expired(apple)...
+%   Check all expired/1 facts: expired(milk).
+%   apple != milk. No matching fact or rule.
+%   expired(apple) FAILS.
+%   Therefore not expired(apple) SUCCEEDS.
+
+% Step 5: All subgoals succeeded.
+%   safe(apple) HOLDS.</code></pre>
+    <p><strong>Justification tree (as s(CASP) would render it):</strong></p>
+    <pre><code>safe(apple) holds because:
+    food(apple) is a fact, and
+    not allergen(apple) holds because:
+        there is no evidence that allergen(apple) is true
+            (checked: allergen(peanuts) does not unify with allergen(apple))
+    not expired(apple) holds because:
+        there is no evidence that expired(apple) is true
+            (checked: expired(milk) does not unify with expired(apple))</code></pre>
+    <p><strong>Why this matters:</strong> In a healthcare chatbot, this kind of trace is essential. If the system recommends something, clinicians and users can see <em>exactly why</em> &mdash; which facts were checked, which negations succeeded, and what evidence was absent. This is the explainability that makes s(CASP) valuable for FirstThen's clinician-bounded architecture.</p>
+    <p><strong>Contrast with <code>?- safe(peanuts)</code>:</strong> The trace would show that <code>not allergen(peanuts)</code> <em>fails</em> because <code>allergen(peanuts)</code> is a fact, so the proof of <code>safe(peanuts)</code> aborts at Step 3. The justification tree would explain: "safe(peanuts) does NOT hold because allergen(peanuts) is a fact."</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- C12: s(CASP) - NAF vs Classical Negation -->
+<!-- ============================================ -->
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">C12</span>
+    <span class="exercise-title">s(CASP) &mdash; NAF vs Classical Negation in Practice (Write Code)</span>
+  </div>
+  <p>Write an s(CASP) program that uses <strong>both</strong> <code>not</code> (negation as failure) and <code>-</code> (classical/strong negation) in a coaching chatbot scenario:</p>
+  <ul>
+    <li>A topic is <strong>discussable by default</strong>: if it's a known topic and not explicitly forbidden, it can be discussed. Use <code>not forbidden(T)</code> (NAF).</li>
+    <li>Certain actions are <strong>explicitly prohibited</strong>: the system must actively assert that diagnosing and prescribing are not allowed. Use <code>-allowed(Action)</code> (classical negation).</li>
+    <li>Write a rule <code>can_respond/2</code> that combines both: a response about a topic is possible if the topic is discussable AND the response action is not explicitly disallowed.</li>
+  </ul>
+  <p>Show queries that demonstrate the different behavior of the two negations.</p>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% s(CASP) program using both NAF and classical negation
+
+% ---- Facts ----
+% Known topics the chatbot covers
+topic(homework).
+topic(routine).
+topic(medication).
+topic(sleep).
+
+% Explicitly forbidden topics (hard boundary set by clinician)
+forbidden(medication).
+
+% Explicitly prohibited actions (strong negation: we KNOW these are not allowed)
+-allowed(diagnose).
+-allowed(prescribe).
+
+% Allowed actions (explicitly stated)
+allowed(suggest_strategy).
+allowed(ask_question).
+allowed(encourage).
+
+% ---- Rules ----
+
+% A topic is discussable by default (NAF: unless forbidden)
+discussable(T) :- topic(T), not forbidden(T).
+
+% A response action is permitted if it's not explicitly disallowed (NAF)
+% AND we don't have strong evidence it's prohibited (classical negation check)
+permitted(A) :- not -allowed(A), not blocked(A).
+
+% Full rule: can respond about a topic with an action
+% if the topic is discussable AND the action is permitted
+can_respond(T, A) :- discussable(T), permitted(A), allowed(A).
+
+% Safety constraint: if an action is explicitly disallowed,
+% it is DEFINITELY not permitted (redundant but makes intent clear)
+-permitted(A) :- -allowed(A).
+
+% ---- Queries demonstrating the difference ----
+
+% Query 1: ?- discussable(homework).
+%   --> YES. homework is a topic, not forbidden(homework) holds
+%   (NAF: no evidence homework is forbidden)
+
+% Query 2: ?- discussable(medication).
+%   --> NO. forbidden(medication) is a fact,
+%   so not forbidden(medication) FAILS
+
+% Query 3: ?- -allowed(diagnose).
+%   --> YES. This is an explicit fact.
+%   We KNOW diagnosing is not allowed (strong claim).
+
+% Query 4: ?- not allowed(diagnose).
+%   --> YES. There is no fact allowed(diagnose).
+%   But this is weaker - it just means "no evidence it's allowed."
+
+% Query 5: ?- -allowed(suggest_strategy).
+%   --> NO. We have allowed(suggest_strategy) as a fact.
+%   It would be contradictory to also have -allowed(suggest_strategy).
+
+% Query 6: ?- not allowed(sleep_training).
+%   --> YES. No fact about allowed(sleep_training).
+%   But -allowed(sleep_training) would be NO (not explicitly denied).
+
+% Query 7: ?- can_respond(homework, suggest_strategy).
+%   --> YES. homework is discussable, suggest_strategy is allowed.
+
+% Query 8: ?- can_respond(homework, diagnose).
+%   --> NO. diagnose is explicitly -allowed (classical negation).</code></pre>
+    <p><strong>The critical distinction in action:</strong></p>
+    <table>
+      <tr>
+        <th>Query</th>
+        <th>NAF (<code>not</code>)</th>
+        <th>Classical (<code>-</code>)</th>
+        <th>Meaning</th>
+      </tr>
+      <tr>
+        <td><code>allowed(diagnose)</code></td>
+        <td><code>not allowed(diagnose)</code> = YES</td>
+        <td><code>-allowed(diagnose)</code> = YES</td>
+        <td>Both negations agree: diagnosing is not allowed</td>
+      </tr>
+      <tr>
+        <td><code>allowed(sleep_training)</code></td>
+        <td><code>not allowed(sleep_training)</code> = YES</td>
+        <td><code>-allowed(sleep_training)</code> = NO</td>
+        <td><strong>They disagree!</strong> NAF says "no evidence it's allowed." Classical says "we haven't explicitly ruled it out."</td>
+      </tr>
+      <tr>
+        <td><code>allowed(suggest_strategy)</code></td>
+        <td><code>not allowed(suggest_strategy)</code> = NO</td>
+        <td><code>-allowed(suggest_strategy)</code> = NO</td>
+        <td>Both agree: it IS allowed (fact exists)</td>
+      </tr>
+    </table>
+    <p><strong>Why this matters for healthcare chatbots:</strong> In FirstThen's architecture, you need both types of negation. <code>not forbidden(topic)</code> (NAF) lets you add new safe topics without listing every one &mdash; anything not forbidden is discussable by default. But <code>-allowed(diagnose)</code> (classical negation) creates a <strong>hard safety boundary</strong> &mdash; the system explicitly knows that diagnosing is prohibited, which is a stronger and more auditable guarantee than simply not having evidence that it's allowed. The justification tree will clearly show "diagnose is explicitly not allowed" vs. "no evidence that X is allowed."</p>
+  </div>
+</div>
+  <h3>Section D: STAR Framework &amp; Applications (D1&ndash;D17)</h3>
+<div class="quiz">
+  <p class="quiz-question"><strong>D1.</strong> In the STAR framework (Speech-to-Text, Think with ASP, Act/Respond), what role does the LLM play?</p>
+  <button class="quiz-option" data-correct="false">A) Makes all reasoning decisions about what advice to give</button>
+  <button class="quiz-option" data-correct="true">B) Only translates: natural language to predicates and predicates back to natural language</button>
+  <button class="quiz-option" data-correct="false">C) Replaces ASP for enforcing safety constraints</button>
+  <button class="quiz-option" data-correct="false">D) Trains and updates the ASP rules over time</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. In the STAR architecture, the LLM serves as a <em>translation layer</em> at both ends of the pipeline. On input, it extracts structured predicates from the parent's natural language utterance. On output, it converts the ASP-derived response predicates back into empathetic, natural language. All reasoning, safety enforcement, and conversation flow decisions happen in the ASP layer, not the LLM. This separation is critical: it means safety guarantees are mathematical (from ASP integrity constraints) rather than probabilistic (from prompt engineering). The LLM never decides <em>what</em> to say &mdash; only <em>how</em> to say it.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D2</span>
+    <span class="exercise-title">Predicate Extraction from Parent Utterance</span>
+  </div>
+  <p>Given the parent utterance below, write the expected predicate extraction output using this vocabulary: <code>child/2</code> (name, id), <code>child_age/2</code> (id, age), <code>challenge/2</code> (id, type), <code>tried_strategy/2</code> (id, strategy), <code>outcome/2</code> (strategy, result), <code>parent_emotion/2</code> (id, emotion).</p>
+  <pre><code>% Parent utterance:
+% "My son Jake is 7 and keeps refusing to do his homework.
+%  We tried a timer but it didn't work. I'm frustrated."
+
+% Write the extracted predicates below:</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Extracted predicates from the parent utterance:
+
+child(jake, child1).
+child_age(child1, 7).
+challenge(child1, homework_refusal).
+tried_strategy(child1, timer).
+outcome(timer, ineffective).
+parent_emotion(child1, frustrated).</code></pre>
+    <p>The LLM's job is to map unstructured natural language into this precise predicate vocabulary. Key extraction decisions: "refusing to do his homework" maps to the canonical challenge type <code>homework_refusal</code> (not a free-text string). "A timer" maps to <code>timer</code> as a known strategy. "Didn't work" maps to the enumerated outcome <code>ineffective</code>. "Frustrated" maps directly. The <code>child1</code> identifier links all predicates about the same child. This structured output is what the ASP layer reasons over &mdash; it never sees the raw text.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D3</span>
+    <span class="exercise-title">Challenge-to-Strategy Mapping Rules</span>
+  </div>
+  <p>Write ASP rules that map behavioral challenges to recommended strategies. Define at least 4 challenge types, at least 6 strategies, and the clinician-approved facts. Then write the <code>recommend/1</code> rule that only suggests approved strategies that aren't blocked.</p>
+  <pre><code>% Define challenge types, strategies, and the recommendation rule.
+% Use: strategy_for/2, clinician_approved/1, blocked/1, recommend/1
+% The recommend rule should check all three conditions.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% Challenge-to-Strategy Knowledge Base
+% ========================================
+
+% Challenge types that the system recognizes
+challenge_type(homework_refusal).
+challenge_type(morning_routine).
+challenge_type(emotional_outburst).
+challenge_type(task_transition).
+challenge_type(bedtime_resistance).
+
+% Strategy definitions
+strategy(visual_schedule).
+strategy(timer).
+strategy(first_then_board).
+strategy(calm_down_corner).
+strategy(token_economy).
+strategy(positive_reinforcement).
+strategy(break_into_steps).
+strategy(countdown_warning).
+
+% Mapping: which strategies address which challenges
+strategy_for(homework_refusal, timer).
+strategy_for(homework_refusal, break_into_steps).
+strategy_for(homework_refusal, first_then_board).
+strategy_for(homework_refusal, token_economy).
+
+strategy_for(morning_routine, visual_schedule).
+strategy_for(morning_routine, timer).
+strategy_for(morning_routine, first_then_board).
+
+strategy_for(emotional_outburst, calm_down_corner).
+strategy_for(emotional_outburst, positive_reinforcement).
+strategy_for(emotional_outburst, countdown_warning).
+
+strategy_for(task_transition, countdown_warning).
+strategy_for(task_transition, visual_schedule).
+strategy_for(task_transition, first_then_board).
+
+strategy_for(bedtime_resistance, visual_schedule).
+strategy_for(bedtime_resistance, countdown_warning).
+strategy_for(bedtime_resistance, token_economy).
+
+% Clinician-approved strategies (only these can be recommended)
+clinician_approved(visual_schedule).
+clinician_approved(timer).
+clinician_approved(first_then_board).
+clinician_approved(calm_down_corner).
+clinician_approved(token_economy).
+clinician_approved(positive_reinforcement).
+clinician_approved(break_into_steps).
+clinician_approved(countdown_warning).
+
+% A strategy is blocked if it was tried and failed
+blocked(S) :- tried_strategy(_, S), outcome(S, ineffective).
+
+% Core recommendation rule
+recommend(S) :-
+    challenge(_, Ch),
+    strategy_for(Ch, S),
+    clinician_approved(S),
+    not blocked(S).</code></pre>
+    <p>This knowledge base encodes the clinical expertise in a structured, auditable way. The <code>recommend/1</code> rule is the core logic: a strategy is recommended only if (1) it addresses one of the child's identified challenges, (2) it has been approved by clinicians, and (3) it is not blocked. A strategy becomes blocked when the parent reports they tried it and it was ineffective. This prevents the chatbot from repeatedly suggesting things that didn't work. Notice that adding or removing clinician-approved strategies is a simple fact change &mdash; no code modification required.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D4</span>
+    <span class="exercise-title">Safety Integrity Constraints for ADHD Chatbot</span>
+  </div>
+  <p>Write a suite of at least 5 ASP integrity constraints for an ADHD coaching chatbot. The constraints must enforce: (1) no medication discussion, (2) no diagnosis, (3) crisis triggers referral, (4) only approved strategies, (5) max 3 recommendations per session. Use the <code>:- body.</code> constraint syntax (denial rules).</p>
+  <pre><code>% Write 5+ integrity constraints that make the ASP solver
+% reject any answer set violating clinical safety rules.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% Safety Integrity Constraints
+% ========================================
+
+% 1. NEVER discuss medication
+%    If any response predicate references medication, reject.
+:- response_topic(medication).
+:- response_contains(dosage).
+:- response_contains(prescription).
+
+% 2. NEVER provide a diagnosis
+%    The chatbot coaches behavior strategies, not clinical diagnoses.
+:- response_topic(diagnosis).
+:- response_contains(diagnose).
+:- suggest(clinical_assessment).
+
+% 3. Crisis indicators MUST trigger professional referral
+%    If a crisis is detected, the only valid action is referral.
+:- crisis_detected, not refer_to_professional.
+:- crisis_detected, recommend(_).
+
+% 4. ONLY recommend clinician-approved strategies
+%    Any recommendation not in the approved list is rejected.
+:- recommend(S), not clinician_approved(S).
+
+% 5. Maximum 3 recommendations per session
+%    Overwhelming parents with too many strategies is counterproductive.
+too_many_recs :- #count{ S : recommend(S) } > 3.
+:- too_many_recs.
+
+% 6. Do not recommend strategies already tried and failed
+%    Respects the parent's experience.
+:- recommend(S), tried_strategy(_, S), outcome(S, ineffective).
+
+% 7. Require at least one recommendation when a challenge exists
+%    Don't leave parents without guidance.
+:- challenge(_, _), not crisis_detected, #count{ S : recommend(S) } = 0.</code></pre>
+    <p>Integrity constraints are the cornerstone of ASP-based safety. Unlike prompt-based guardrails, these are <em>mathematical guarantees</em>: the ASP solver will produce <strong>no answer set at all</strong> if any constraint is violated. There is no way to "jailbreak" an integrity constraint &mdash; it is enforced at the solver level, not by an LLM. Constraint 3 is particularly important: if crisis indicators are extracted from the parent's message, the <em>only</em> permissible action is referral. The solver cannot produce a plan that both detects a crisis and recommends a behavioral strategy. Constraint 5 uses an aggregate <code>#count</code> to limit the number of concurrent recommendations, preventing information overload for already-stressed parents.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>D5.</strong> Why can't prompt engineering alone provide the same safety guarantees as ASP integrity constraints?</p>
+  <button class="quiz-option" data-correct="false">A) Prompt engineering is slower than ASP constraint evaluation</button>
+  <button class="quiz-option" data-correct="true">B) ASP constraints are mathematical guarantees that cannot be bypassed; prompt engineering is probabilistic and can be jailbroken</button>
+  <button class="quiz-option" data-correct="false">C) LLMs are inherently better at safety than symbolic systems</button>
+  <button class="quiz-option" data-correct="false">D) ASP is newer technology with fewer known vulnerabilities</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. This is the fundamental insight behind the STAR architecture. Prompt engineering (e.g., "You must never discuss medication") is a <em>soft</em> constraint &mdash; it works most of the time but can fail due to prompt injection, adversarial inputs, context window overflow, or simply stochastic LLM behavior. ASP integrity constraints like <code>:- response_topic(medication).</code> are <em>hard</em> constraints enforced by the solver: if any answer set contains <code>response_topic(medication)</code>, that answer set is discarded entirely. There is no input a user can provide that bypasses solver-level enforcement. This is why healthcare applications need symbolic reasoning in the loop &mdash; probabilistic safety is not sufficient when patient wellbeing is at stake.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D6</span>
+    <span class="exercise-title">Conversation Phase Transition System</span>
+  </div>
+  <p>Write an ASP program with 3 conversation phases: <code>intake</code>, <code>strategy</code>, and <code>followup</code>. Each phase has required information. Write rules for <code>current_phase/1</code> (determine which phase we're in), <code>ask_about/1</code> (what to ask next based on missing requirements), and constraints preventing phase-skipping.</p>
+  <pre><code>% Define 3 phases, their requirements, and transition logic.
+% The system should figure out what phase it's in based on
+% what information has been gathered so far.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% Conversation Phase System
+% ========================================
+
+% Phase definitions
+phase(intake).
+phase(strategy).
+phase(followup).
+
+% Phase ordering
+phase_order(intake, 1).
+phase_order(strategy, 2).
+phase_order(followup, 3).
+
+% Required information for each phase to be COMPLETE
+required(intake, child_name).
+required(intake, child_age).
+required(intake, primary_challenge).
+
+required(strategy, challenge_context).
+required(strategy, tried_strategies).
+required(strategy, parent_goal).
+
+required(followup, strategy_chosen).
+required(followup, implementation_plan).
+required(followup, followup_date).
+
+% Track what info has been gathered (these come from predicate extraction)
+gathered(child_name)    :- child(_, _).
+gathered(child_age)     :- child_age(_, _).
+gathered(primary_challenge) :- challenge(_, _).
+gathered(challenge_context) :- challenge_detail(_, _, _).
+gathered(tried_strategies)  :- tried_strategy(_, _).
+gathered(tried_strategies)  :- no_prior_strategies.
+gathered(parent_goal)       :- parent_goal(_, _).
+gathered(strategy_chosen)   :- selected_strategy(_, _).
+gathered(implementation_plan) :- plan_confirmed.
+gathered(followup_date)     :- followup_scheduled(_).
+
+% A phase is complete when all its requirements are gathered
+phase_complete(P) :-
+    phase(P),
+    not phase_missing(P, _).
+
+phase_missing(P, R) :-
+    required(P, R),
+    not gathered(R).
+
+% Current phase: the earliest incomplete phase
+current_phase(P) :-
+    phase(P),
+    not phase_complete(P),
+    not earlier_incomplete(P).
+
+earlier_incomplete(P) :-
+    phase(P), phase(P2),
+    phase_order(P, N), phase_order(P2, N2),
+    N2 < N,
+    not phase_complete(P2).
+
+% What to ask next: missing requirements in the current phase
+ask_about(R) :-
+    current_phase(P),
+    required(P, R),
+    not gathered(R).
+
+% ========================================
+% Safety Constraints
+% ========================================
+
+% Cannot be in strategy phase if intake is incomplete
+:- current_phase(strategy), not phase_complete(intake).
+
+% Cannot be in followup phase if strategy is incomplete
+:- current_phase(followup), not phase_complete(strategy).
+
+% Cannot recommend strategies during intake
+:- current_phase(intake), recommend(_).
+
+% Cannot skip directly from intake to followup
+:- current_phase(followup), not phase_complete(intake).</code></pre>
+    <p>This system models the conversation as a state machine where phase transitions are governed by information completeness. The <code>current_phase/1</code> rule finds the earliest phase that still has missing requirements. The <code>ask_about/1</code> rule identifies exactly which pieces of information the chatbot should elicit next. The integrity constraints prevent the system from jumping ahead &mdash; you cannot recommend strategies until intake is complete, and you cannot discuss follow-up until a strategy has been chosen. This mirrors how a real clinician structures a session: gather background, discuss options, then plan implementation.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D7</span>
+    <span class="exercise-title">Trace the Answer Set: Strategy Recommendation</span>
+  </div>
+  <p>Given the following ADHD coaching ASP program and the extracted predicates from a parent's message, determine what the answer set contains for <code>recommend/1</code>. Work through each strategy candidate step by step.</p>
+  <pre><code>% ---- Knowledge Base ----
+strategy_for(homework_refusal, timer).
+strategy_for(homework_refusal, break_into_steps).
+strategy_for(homework_refusal, first_then_board).
+strategy_for(homework_refusal, token_economy).
+strategy_for(homework_refusal, visual_schedule).
+
+clinician_approved(timer).
+clinician_approved(break_into_steps).
+clinician_approved(first_then_board).
+clinician_approved(token_economy).
+% NOTE: visual_schedule is NOT clinician_approved for this context
+
+% ---- Extracted Predicates (from parent message) ----
+child(jake, child1).
+child_age(child1, 7).
+challenge(child1, homework_refusal).
+tried_strategy(child1, timer).
+outcome(timer, ineffective).
+tried_strategy(child1, break_into_steps).
+outcome(break_into_steps, somewhat_effective).
+
+% ---- Rules ----
+blocked(S) :- tried_strategy(_, S), outcome(S, ineffective).
+recommend(S) :- challenge(_, Ch), strategy_for(Ch, S),
+                 clinician_approved(S), not blocked(S).
+
+% ---- Constraint ----
+:- recommend(S), not clinician_approved(S).
+
+% What does recommend/1 contain in the answer set?</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% Walk through each candidate strategy for homework_refusal:
+%
+% 1. timer:
+%    - strategy_for(homework_refusal, timer)    YES
+%    - clinician_approved(timer)                YES
+%    - blocked(timer)?
+%      tried_strategy(child1, timer) YES, outcome(timer, ineffective) YES
+%      -> blocked(timer) is TRUE
+%    - not blocked(timer) -> FAILS
+%    - timer is NOT recommended
+%
+% 2. break_into_steps:
+%    - strategy_for(homework_refusal, break_into_steps)   YES
+%    - clinician_approved(break_into_steps)                YES
+%    - blocked(break_into_steps)?
+%      tried_strategy(child1, break_into_steps) YES
+%      outcome(break_into_steps, somewhat_effective) YES
+%      but blocked requires outcome(S, ineffective)
+%      outcome(break_into_steps, ineffective) does NOT exist
+%      -> blocked(break_into_steps) is FALSE
+%    - not blocked(break_into_steps) -> SUCCEEDS
+%    - break_into_steps IS recommended
+%
+% 3. first_then_board:
+%    - strategy_for(homework_refusal, first_then_board)   YES
+%    - clinician_approved(first_then_board)                YES
+%    - blocked(first_then_board)?
+%      tried_strategy(_, first_then_board) -> NO fact exists
+%      -> blocked(first_then_board) is FALSE
+%    - not blocked(first_then_board) -> SUCCEEDS
+%    - first_then_board IS recommended
+%
+% 4. token_economy:
+%    - strategy_for(homework_refusal, token_economy)      YES
+%    - clinician_approved(token_economy)                   YES
+%    - blocked(token_economy)?
+%      tried_strategy(_, token_economy) -> NO fact exists
+%      -> blocked(token_economy) is FALSE
+%    - not blocked(token_economy) -> SUCCEEDS
+%    - token_economy IS recommended
+%
+% 5. visual_schedule:
+%    - strategy_for(homework_refusal, visual_schedule)    YES
+%    - clinician_approved(visual_schedule)                 NO (not a fact)
+%    - FAILS at clinician_approved check
+%    - visual_schedule is NOT recommended
+%
+% ANSWER SET for recommend/1:
+%   recommend(break_into_steps)
+%   recommend(first_then_board)
+%   recommend(token_economy)</code></pre>
+    <p>Three strategies are recommended. <code>timer</code> is excluded because the parent already tried it and it was ineffective (blocked). <code>visual_schedule</code> is excluded because it lacks clinician approval in this context. <code>break_into_steps</code> passes despite being tried because its outcome was <code>somewhat_effective</code>, not <code>ineffective</code> &mdash; the blocked rule specifically requires <code>outcome(S, ineffective)</code>. This demonstrates how the system respects both clinical authority (clinician_approved) and parental experience (blocked by failure) simultaneously.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D8</span>
+    <span class="exercise-title">Conversational Knowledge Template (CKT) for Homework Challenges</span>
+  </div>
+  <p>Write a Conversational Knowledge Template (CKT) in ASP for gathering information about a child's homework challenges. Track these properties: <code>when_occurs</code>, <code>duration</code>, <code>child_reaction</code>, <code>parent_response</code>. Write rules for <code>filled/2</code>, <code>next_ask/2</code>, and <code>topic_complete/1</code>.</p>
+  <pre><code>% A CKT is an ASP-encoded dialog structure that tracks
+% what the chatbot knows and what it still needs to ask.
+% Build one for the topic "homework_challenges".</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% CKT: Homework Challenges
+% ========================================
+
+% Define the topic and its required properties
+topic(homework_challenges).
+property(homework_challenges, when_occurs).
+property(homework_challenges, duration).
+property(homework_challenges, child_reaction).
+property(homework_challenges, parent_response).
+
+% Property priority (ask in this order)
+priority(homework_challenges, when_occurs, 1).
+priority(homework_challenges, duration, 2).
+priority(homework_challenges, child_reaction, 3).
+priority(homework_challenges, parent_response, 4).
+
+% A property is filled when we have extracted its value
+filled(homework_challenges, when_occurs) :-
+    challenge_when(_, _).
+filled(homework_challenges, duration) :-
+    challenge_duration(_, _).
+filled(homework_challenges, child_reaction) :-
+    child_reaction(_, _).
+filled(homework_challenges, parent_response) :-
+    parent_response_to(_, _).
+
+% A property is missing if required but not filled
+missing(T, P) :-
+    property(T, P),
+    not filled(T, P).
+
+% The next thing to ask is the highest-priority missing property
+next_ask(T, P) :-
+    missing(T, P),
+    priority(T, P, N),
+    not higher_priority_missing(T, N).
+
+higher_priority_missing(T, N) :-
+    missing(T, P2),
+    priority(T, P2, N2),
+    N2 < N.
+
+% A topic is complete when no properties are missing
+topic_complete(T) :-
+    topic(T),
+    not has_missing(T).
+
+has_missing(T) :-
+    missing(T, _).
+
+% ========================================
+% Prompt Templates (what to ask for each property)
+% ========================================
+ask_prompt(when_occurs, "When does the homework struggle usually happen? Right after school, after dinner, or another time?").
+ask_prompt(duration, "How long does the homework battle typically last?").
+ask_prompt(child_reaction, "What does your child do when it's homework time? Do they argue, ignore, get upset, or something else?").
+ask_prompt(parent_response, "What do you usually do when the homework struggle happens?").
+
+% ========================================
+% Example: after extracting some info from conversation
+% ========================================
+% If the parent said "He refuses every evening after dinner for about an hour":
+% challenge_when(child1, after_dinner).
+% challenge_duration(child1, one_hour).
+%
+% Then: filled(homework_challenges, when_occurs) = true
+%        filled(homework_challenges, duration) = true
+%        next_ask(homework_challenges, child_reaction)
+%        topic_complete(homework_challenges) = false</code></pre>
+    <p>A CKT is the fundamental dialog management unit in the STAR architecture. It encodes <em>what</em> information is needed, <em>how to check</em> if we have it, and <em>what to ask next</em> &mdash; all in declarative ASP rules rather than imperative code. The <code>next_ask/2</code> rule uses priority ordering to ensure questions are asked in a clinically meaningful sequence (context before reactions). The <code>topic_complete/1</code> rule tells the conversation manager when to move on. Multiple CKTs can be active simultaneously (e.g., one for homework, one for morning routine), with a higher-level coordinator choosing which topic to pursue. This is far more maintainable than hard-coded dialog trees.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>D9.</strong> What is a Conversational Knowledge Template (CKT)?</p>
+  <button class="quiz-option" data-correct="false">A) A prompt template that tells the LLM what to say next</button>
+  <button class="quiz-option" data-correct="true">B) An ASP-encoded state machine that tracks dialog properties and determines what to ask next</button>
+  <button class="quiz-option" data-correct="false">C) A database schema for storing conversation history</button>
+  <button class="quiz-option" data-correct="false">D) A machine learning model trained on clinical conversations</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. A CKT is a declarative specification in ASP that defines: (1) what properties a topic requires, (2) how to check whether each property has been filled by extracted predicates, and (3) what question to ask next based on priority ordering of missing properties. Unlike a prompt template (A), CKTs don't contain natural language &mdash; they are logical rules. Unlike a database schema (C), they encode reasoning about dialog flow. The LLM generates the actual natural language questions, but the CKT <em>decides</em> which question to ask. This separation means clinicians can modify the information-gathering structure without touching LLM prompts.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D10</span>
+    <span class="exercise-title">Predicate Validation Rules</span>
+  </div>
+  <p>Write ASP rules that validate extracted predicates. Check: (1) <code>child_age</code> must be 4&ndash;11, (2) challenge type must be from an approved enumeration, (3) strategy must be a known strategy. Flag validation errors and set <code>needs_reextraction</code> if any validation fails.</p>
+  <pre><code>% The LLM's predicate extraction can make mistakes.
+% Write validation rules that catch errors before
+% the predicates reach the reasoning engine.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% Predicate Validation System
+% ========================================
+
+% Approved enumerations (the "vocabulary" the system understands)
+valid_challenge(homework_refusal).
+valid_challenge(morning_routine).
+valid_challenge(emotional_outburst).
+valid_challenge(task_transition).
+valid_challenge(bedtime_resistance).
+valid_challenge(social_conflict).
+valid_challenge(impulse_control).
+
+valid_strategy(timer).
+valid_strategy(visual_schedule).
+valid_strategy(first_then_board).
+valid_strategy(calm_down_corner).
+valid_strategy(token_economy).
+valid_strategy(positive_reinforcement).
+valid_strategy(break_into_steps).
+valid_strategy(countdown_warning).
+
+valid_outcome(effective).
+valid_outcome(somewhat_effective).
+valid_outcome(ineffective).
+valid_outcome(not_tried).
+
+% ---- Validation Rule 1: Age in range 4-11 ----
+validation_error(age_out_of_range, Id) :-
+    child_age(Id, Age),
+    Age < 4.
+
+validation_error(age_out_of_range, Id) :-
+    child_age(Id, Age),
+    Age > 11.
+
+% ---- Validation Rule 2: Challenge must be recognized ----
+validation_error(unknown_challenge, Ch) :-
+    challenge(_, Ch),
+    not valid_challenge(Ch).
+
+% ---- Validation Rule 3: Strategy must be known ----
+validation_error(unknown_strategy, S) :-
+    tried_strategy(_, S),
+    not valid_strategy(S).
+
+% ---- Validation Rule 4: Outcome must be valid ----
+validation_error(unknown_outcome, O) :-
+    outcome(_, O),
+    not valid_outcome(O).
+
+% ---- Validation Rule 5: Child must have an age ----
+validation_error(missing_age, Id) :-
+    child(_, Id),
+    not has_age(Id).
+
+has_age(Id) :- child_age(Id, _).
+
+% ---- Aggregation ----
+has_error :- validation_error(_, _).
+needs_reextraction :- has_error.
+
+% Count errors for logging
+error_count(N) :- N = #count{ Type, Arg : validation_error(Type, Arg) }.
+
+% ---- Integrity Constraint: block reasoning on invalid data ----
+:- recommend(_), has_error.
+
+#show validation_error/2.
+#show needs_reextraction/0.
+#show error_count/1.</code></pre>
+    <p>This validation layer sits between predicate extraction (LLM) and reasoning (ASP). It catches common LLM extraction errors: hallucinated challenge types, ages outside the pediatric ADHD range, and unknown strategies. The critical integrity constraint at the bottom ensures the system <em>cannot</em> make recommendations if any validation error exists &mdash; it must re-extract first. This is a defense-in-depth approach: even if the LLM produces nonsensical predicates, they are caught before affecting recommendations. The <code>error_count</code> aggregate helps the system decide whether to re-prompt the LLM (few errors) or ask the parent to rephrase (many errors).</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>D11.</strong> How does multi-stage predicate extraction improve accuracy compared to single-pass extraction?</p>
+  <button class="quiz-option" data-correct="false">A) It uses a bigger LLM for extraction</button>
+  <button class="quiz-option" data-correct="true">B) The LLM extracts first, then ASP validates and catches errors before reasoning proceeds</button>
+  <button class="quiz-option" data-correct="false">C) It runs the same extraction twice and averages the results</button>
+  <button class="quiz-option" data-correct="false">D) It uses multiple different LLMs in parallel and takes a majority vote</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. Multi-stage extraction follows the pipeline: LLM extracts predicates &rarr; ASP validation rules check the predicates &rarr; if errors are found, the system either re-prompts the LLM with specific error feedback or asks the user for clarification. This is more effective than simply running extraction twice (C) because the ASP validator knows <em>exactly what is wrong</em> (e.g., "unknown_challenge" or "age_out_of_range") and can provide targeted correction instructions. For example, if the LLM extracts <code>challenge(child1, wont_sit_still)</code> and the validator flags it as unknown, the system can re-prompt: "Map 'won't sit still' to the closest valid challenge type from: homework_refusal, impulse_control, ..."</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D12</span>
+    <span class="exercise-title">Crisis Detection and Handling System</span>
+  </div>
+  <p>Write an ASP crisis detection and handling system. Define crisis indicators (<code>self_harm</code>, <code>child_abuse</code>, <code>suicidal_ideation</code>). When any crisis indicator is detected, the system MUST refer to a professional and CANNOT perform any coaching action.</p>
+  <pre><code>% This is the highest-priority safety system in the chatbot.
+% It must override ALL other behavior when a crisis is detected.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% Crisis Detection and Handling System
+% ========================================
+
+% Crisis indicator types
+crisis_type(self_harm).
+crisis_type(child_abuse).
+crisis_type(suicidal_ideation).
+crisis_type(domestic_violence).
+crisis_type(substance_abuse).
+crisis_type(imminent_danger).
+
+% Crisis is detected when the LLM extracts any crisis indicator
+crisis_detected :-
+    extracted_indicator(Type),
+    crisis_type(Type).
+
+% When crisis is detected, MUST refer to professional
+refer_to_professional :- crisis_detected.
+
+% Generate specific referral based on crisis type
+referral(crisis_hotline) :-
+    extracted_indicator(suicidal_ideation).
+
+referral(crisis_hotline) :-
+    extracted_indicator(self_harm).
+
+referral(child_protective_services) :-
+    extracted_indicator(child_abuse).
+
+referral(domestic_violence_hotline) :-
+    extracted_indicator(domestic_violence).
+
+referral(emergency_services) :-
+    extracted_indicator(imminent_danger).
+
+referral(general_mental_health) :-
+    crisis_detected,
+    not has_specific_referral.
+
+has_specific_referral :-
+    referral(R),
+    R != general_mental_health.
+
+% Set response mode to crisis
+response_mode(crisis) :- crisis_detected.
+response_mode(coaching) :- not crisis_detected.
+
+% ========================================
+% CRITICAL Integrity Constraints
+% ========================================
+
+% If crisis detected, MUST have referral (cannot be suppressed)
+:- crisis_detected, not refer_to_professional.
+
+% If crisis detected, CANNOT recommend any coaching strategy
+:- crisis_detected, recommend(_).
+
+% If crisis detected, CANNOT ask coaching questions
+:- crisis_detected, ask_about(_).
+
+% If crisis detected, CANNOT be in any coaching phase
+:- crisis_detected, current_phase(strategy).
+:- crisis_detected, current_phase(intake).
+
+% If crisis detected, CANNOT minimize the situation
+:- crisis_detected, response_tone(casual).
+:- crisis_detected, response_tone(dismissive).
+
+% Referral MUST include at least one specific resource
+:- crisis_detected, not has_any_referral.
+has_any_referral :- referral(_).
+
+#show crisis_detected/0.
+#show refer_to_professional/0.
+#show referral/1.
+#show response_mode/1.</code></pre>
+    <p>This is the most safety-critical component of the chatbot. The integrity constraints create a "firewall" that completely overrides normal conversation when a crisis is detected. There are 7 constraints ensuring: (1) referral cannot be suppressed, (2) coaching cannot continue, (3) coaching questions cannot be asked, (4) the conversation cannot remain in a coaching phase, (5-6) the response tone cannot minimize the crisis, and (7) at least one specific resource must be provided. The <code>referral/1</code> rules route to the appropriate service based on crisis type. Because these are ASP constraints, they are <em>mathematically guaranteed</em> to fire &mdash; there is no prompt that can trick the system into coaching through a crisis.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D13</span>
+    <span class="exercise-title">Full STAR Pipeline Trace</span>
+  </div>
+  <p>Trace the complete STAR pipeline for this parent message. Show all three stages: (1) predicate extraction, (2) ASP rules that fire, (3) response predicates derived.</p>
+  <pre><code>% Parent message:
+% "Emma is 5 and has been having meltdowns during dinner.
+%  We tried a calm-down corner and it helped a little."
+
+% Available ASP rules (simplified):
+strategy_for(emotional_outburst, calm_down_corner).
+strategy_for(emotional_outburst, positive_reinforcement).
+strategy_for(emotional_outburst, countdown_warning).
+strategy_for(emotional_outburst, deep_breathing).
+
+clinician_approved(calm_down_corner).
+clinician_approved(positive_reinforcement).
+clinician_approved(countdown_warning).
+% deep_breathing is NOT approved
+
+appropriate(calm_down_corner, age_4_6).
+appropriate(positive_reinforcement, age_4_6).
+appropriate(countdown_warning, age_4_6).
+appropriate(deep_breathing, age_4_6).
+
+age_group(Id, age_4_6) :- child_age(Id, A), A >= 4, A =< 6.
+
+blocked(S) :- tried_strategy(_, S), outcome(S, ineffective).
+
+recommend(S) :-
+    challenge(_, Ch), strategy_for(Ch, S),
+    clinician_approved(S), not blocked(S),
+    age_group(Id, AG), appropriate(S, AG),
+    child_age(Id, _).
+
+% Trace all three stages of the pipeline.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% STAGE 1: Predicate Extraction (LLM)
+% ========================================
+% The LLM reads the parent's message and produces:
+
+child(emma, child1).
+child_age(child1, 5).
+challenge(child1, emotional_outburst).
+challenge_context(child1, during_dinner).
+tried_strategy(child1, calm_down_corner).
+outcome(calm_down_corner, somewhat_effective).
+
+% ========================================
+% STAGE 2: ASP Reasoning (which rules fire?)
+% ========================================
+
+% First, derived facts:
+%   age_group(child1, age_4_6)
+%     because child_age(child1, 5), 5 >= 4, 5 =< 6   -> YES
+
+% Check blocked/1 for each strategy:
+%   blocked(calm_down_corner)?
+%     tried_strategy(child1, calm_down_corner) -> YES
+%     outcome(calm_down_corner, ineffective)   -> NO (it's somewhat_effective)
+%     -> blocked(calm_down_corner) is FALSE
+%
+%   blocked(positive_reinforcement)? -> No tried_strategy fact -> FALSE
+%   blocked(countdown_warning)?      -> No tried_strategy fact -> FALSE
+%   blocked(deep_breathing)?         -> No tried_strategy fact -> FALSE
+
+% Evaluate recommend/1 for each candidate:
+%
+% calm_down_corner:
+%   strategy_for(emotional_outburst, calm_down_corner)  -> YES
+%   clinician_approved(calm_down_corner)                 -> YES
+%   not blocked(calm_down_corner)                        -> YES
+%   appropriate(calm_down_corner, age_4_6)               -> YES
+%   => recommend(calm_down_corner)                       -> YES
+%
+% positive_reinforcement:
+%   strategy_for(emotional_outburst, positive_reinforcement)  -> YES
+%   clinician_approved(positive_reinforcement)                 -> YES
+%   not blocked(positive_reinforcement)                        -> YES
+%   appropriate(positive_reinforcement, age_4_6)               -> YES
+%   => recommend(positive_reinforcement)                       -> YES
+%
+% countdown_warning:
+%   strategy_for(emotional_outburst, countdown_warning)  -> YES
+%   clinician_approved(countdown_warning)                 -> YES
+%   not blocked(countdown_warning)                        -> YES
+%   appropriate(countdown_warning, age_4_6)               -> YES
+%   => recommend(countdown_warning)                       -> YES
+%
+% deep_breathing:
+%   strategy_for(emotional_outburst, deep_breathing)     -> YES
+%   clinician_approved(deep_breathing)                    -> NO
+%   => FAILS, not recommended
+
+% ========================================
+% STAGE 3: Response Predicates Derived
+% ========================================
+% The answer set contains:
+
+recommend(calm_down_corner).
+recommend(positive_reinforcement).
+recommend(countdown_warning).
+
+% Additional derived response context:
+% - acknowledge(tried_strategy, calm_down_corner, somewhat_effective)
+% - age_group(child1, age_4_6)
+% - challenge(child1, emotional_outburst)
+
+% The LLM then converts these predicates into natural language:
+% "It sounds like dinnertime meltdowns are tough. It's great that
+%  the calm-down corner is helping a little - let's keep that going!
+%  For a 5-year-old, you might also try positive reinforcement (praise
+%  specific calm moments during dinner) or a countdown warning
+%  (give Emma a 5-minute heads-up before dinner transitions)."</code></pre>
+    <p>This trace shows the complete STAR pipeline. Notice several key behaviors: (1) <code>calm_down_corner</code> is still recommended because it was <code>somewhat_effective</code>, not <code>ineffective</code> &mdash; the system builds on what's working. (2) <code>deep_breathing</code> is filtered out despite being age-appropriate because it lacks clinician approval. (3) The LLM at Stage 3 weaves together the structured predicates into empathetic language, acknowledging the parent's existing effort. The LLM never decided <em>what</em> to recommend &mdash; it only decided <em>how</em> to phrase the ASP's conclusions.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D14</span>
+    <span class="exercise-title">Age-Appropriate Strategy Filtering</span>
+  </div>
+  <p>Write ASP rules for age-appropriate strategy filtering. Define 3 age groups (4&ndash;6, 7&ndash;9, 10&ndash;11). Some strategies are only appropriate for certain ages. Write <code>appropriate/2</code> facts and the integrity constraint that blocks age-inappropriate recommendations.</p>
+  <pre><code>% Not all strategies work for all ages. A visual schedule is
+% great for a 5-year-old but might feel patronizing for an 11-year-old.
+% Write the age-filtering system.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% Age-Appropriate Strategy Filtering
+% ========================================
+
+% Age group definitions
+age_group(Id, preschool) :- child_age(Id, A), A >= 4, A =< 6.
+age_group(Id, elementary) :- child_age(Id, A), A >= 7, A =< 9.
+age_group(Id, preteen) :- child_age(Id, A), A >= 10, A =< 11.
+
+% ---- Strategy-Age Appropriateness Matrix ----
+% Format: appropriate(Strategy, AgeGroup)
+
+% Visual schedule: great for younger kids, less needed for older
+appropriate(visual_schedule, preschool).
+appropriate(visual_schedule, elementary).
+
+% Timer: universally appropriate
+appropriate(timer, preschool).
+appropriate(timer, elementary).
+appropriate(timer, preteen).
+
+% First-then board: primarily for younger children
+appropriate(first_then_board, preschool).
+appropriate(first_then_board, elementary).
+
+% Calm-down corner: all ages, different framing
+appropriate(calm_down_corner, preschool).
+appropriate(calm_down_corner, elementary).
+appropriate(calm_down_corner, preteen).
+
+% Token economy: all ages
+appropriate(token_economy, preschool).
+appropriate(token_economy, elementary).
+appropriate(token_economy, preteen).
+
+% Positive reinforcement: all ages
+appropriate(positive_reinforcement, preschool).
+appropriate(positive_reinforcement, elementary).
+appropriate(positive_reinforcement, preteen).
+
+% Break into steps: more effective for older kids who can plan
+appropriate(break_into_steps, elementary).
+appropriate(break_into_steps, preteen).
+
+% Self-monitoring checklist: requires self-awareness, older only
+appropriate(self_monitoring, preteen).
+
+% Countdown warning: all ages
+appropriate(countdown_warning, preschool).
+appropriate(countdown_warning, elementary).
+appropriate(countdown_warning, preteen).
+
+% Negotiation/problem-solving: requires cognitive maturity
+appropriate(collaborative_problem_solving, elementary).
+appropriate(collaborative_problem_solving, preteen).
+
+% ---- Helper: check if strategy is appropriate for this child ----
+age_appropriate_for_child(S, Id) :-
+    strategy(S),
+    child(_, Id),
+    age_group(Id, AG),
+    appropriate(S, AG).
+
+% ---- Integrity Constraints ----
+
+% Cannot recommend age-inappropriate strategies
+:- recommend(S), child(_, Id), not age_appropriate_for_child(S, Id).
+
+% Must have a known age to make any recommendation
+:- recommend(_), child(_, Id), not age_group(Id, _).
+
+% ---- Updated recommend rule with age check ----
+recommend(S) :-
+    challenge(_, Ch),
+    strategy_for(Ch, S),
+    clinician_approved(S),
+    not blocked(S),
+    child(_, Id),
+    age_appropriate_for_child(S, Id).
+
+#show recommend/1.
+#show age_group/2.</code></pre>
+    <p>This system ensures developmental appropriateness of recommendations. A <code>first_then_board</code> (a visual "first do X, then you get Y" card) is excellent for a 5-year-old but would feel patronizing for an 11-year-old, who would benefit more from <code>collaborative_problem_solving</code>. The integrity constraints guarantee age-inappropriate strategies are never recommended, and that recommendations cannot be made without a known age group. The appropriateness matrix is maintained by clinicians as simple facts &mdash; adding a new strategy or adjusting age ranges requires no code changes, only new <code>appropriate/2</code> facts.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>D15.</strong> Why is s(CASP) preferred over Clingo for the chatbot reasoning engine?</p>
+  <button class="quiz-option" data-correct="false">A) s(CASP) compiles to faster machine code than Clingo</button>
+  <button class="quiz-option" data-correct="true">B) s(CASP) is goal-directed (only computes what's needed for the query), produces justification trees for explainability, and doesn't require grounding</button>
+  <button class="quiz-option" data-correct="false">C) Clingo cannot handle negation-as-failure</button>
+  <button class="quiz-option" data-correct="false">D) s(CASP) supports more programming languages as host environments</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. s(CASP), developed by Gopal Gupta's group at UT Dallas, has three key advantages for conversational AI. First, it is <em>goal-directed</em>: instead of computing all possible answer sets (like Clingo's ground-and-solve approach), it only explores the portion of the program relevant to the specific query, making it efficient for large knowledge bases. Second, it produces <em>justification trees</em> that explain <em>why</em> a conclusion was reached in human-readable form &mdash; essential for healthcare applications where clinicians need to audit the chatbot's reasoning. Third, it works without <em>grounding</em> (expanding all possible variable bindings), which means it can handle programs with infinite domains or large variable spaces. Clingo (C) does support negation-as-failure, so that option is incorrect.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D16</span>
+    <span class="exercise-title">Off-Topic and Unknown Behavior Handling</span>
+  </div>
+  <p>Write ASP rules for handling off-topic inputs. When the LLM extracts a behavior not in the known mappings, the system should: (a) detect it's off-topic, (b) suggest redirecting to the closest approved topic, (c) if no behavior was extracted at all, ask for clarification.</p>
+  <pre><code>% Parents might say things outside the chatbot's scope.
+% The system needs to gracefully handle these cases
+% without giving inappropriate advice.</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% Off-Topic and Unknown Input Handling
+% ========================================
+
+% Known behavior categories (the system's scope)
+known_behavior(homework_refusal).
+known_behavior(morning_routine).
+known_behavior(emotional_outburst).
+known_behavior(task_transition).
+known_behavior(bedtime_resistance).
+known_behavior(social_conflict).
+known_behavior(impulse_control).
+
+% Behavior similarity mappings (for redirection suggestions)
+% Format: similar_to(UnknownBehavior, KnownBehavior)
+similar_to(school_refusal, morning_routine).
+similar_to(tantrum, emotional_outburst).
+similar_to(meltdown, emotional_outburst).
+similar_to(wont_listen, impulse_control).
+similar_to(fighting_siblings, social_conflict).
+similar_to(screen_time_battle, task_transition).
+similar_to(wont_eat, task_transition).
+similar_to(chore_refusal, homework_refusal).
+
+% ---- Detection Rules ----
+
+% Case 1: Behavior extracted but not in known set
+off_topic(Ch) :-
+    challenge(_, Ch),
+    not known_behavior(Ch).
+
+% Case 2: No behavior extracted at all
+no_behavior_extracted :-
+    not has_any_challenge.
+
+has_any_challenge :- challenge(_, _).
+
+% ---- Response Rules ----
+
+% If off-topic but we have a similar known behavior, redirect
+redirect_to(KnownBh) :-
+    off_topic(Ch),
+    similar_to(Ch, KnownBh).
+
+% If off-topic with no similar mapping, suggest general topics
+suggest_topic_list :-
+    off_topic(Ch),
+    not has_redirect(Ch).
+
+has_redirect(Ch) :-
+    off_topic(Ch),
+    similar_to(Ch, _).
+
+% If nothing extracted, ask for clarification
+ask_clarification :-
+    no_behavior_extracted.
+
+% ---- Response Mode ----
+response_mode(redirect) :- redirect_to(_).
+response_mode(suggest_topics) :- suggest_topic_list.
+response_mode(clarify) :- ask_clarification.
+response_mode(normal) :-
+    has_any_challenge,
+    not off_topic_exists.
+
+off_topic_exists :- off_topic(_).
+
+% ---- Integrity Constraints ----
+
+% Cannot recommend strategies for off-topic behaviors
+:- recommend(_), off_topic_exists.
+
+% Cannot recommend when no behavior identified
+:- recommend(_), no_behavior_extracted.
+
+% Must have exactly one response mode
+:- not response_mode(_).
+
+#show response_mode/1.
+#show redirect_to/1.
+#show suggest_topic_list/0.
+#show ask_clarification/0.</code></pre>
+    <p>This system handles three out-of-scope scenarios. (1) <strong>Redirectable</strong>: the parent mentions something outside the exact vocabulary but close to a known behavior (e.g., "tantrums" redirects to <code>emotional_outburst</code>). The LLM can then say: "It sounds like you're describing emotional outbursts &mdash; I can help with that!" (2) <strong>Fully off-topic</strong>: the behavior has no similar mapping (e.g., the parent asks about medication). The system presents available topics. (3) <strong>Nothing extracted</strong>: the message was too vague or unrelated. The system asks for clarification. Critically, the integrity constraints ensure that no coaching recommendations are made in any off-topic scenario &mdash; the system stays in its lane.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">D17</span>
+    <span class="exercise-title">AutoConcierge Pattern: Restaurant Recommender in ASP</span>
+  </div>
+  <p>Build a simplified AutoConcierge-style restaurant recommender in ASP. This demonstrates the <strong>exact same pattern</strong> FirstThen uses for ADHD coaching: facts encode domain knowledge, user preferences become predicates, rules match and filter, integrity constraints enforce safety, and <code>#show</code> directives control output. Include: restaurant facts, preference predicates, matching rules, a scoring system, and integrity constraints.</p>
+  <pre><code>% Build a restaurant recommender that mirrors the ADHD chatbot architecture:
+%   Domain facts     = Restaurant database
+%   User predicates  = Dining preferences
+%   Matching rules   = Recommendation logic
+%   Constraints      = Safety (allergies, hours)
+%   #show            = What the LLM sees to generate a response</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code>% ========================================
+% AutoConcierge: Restaurant Recommender
+% (Same pattern as FirstThen ADHD Coach)
+% ========================================
+
+% ---- Domain Knowledge (like ADHD strategy database) ----
+restaurant(sakura, japanese, moderate, downtown).
+restaurant(luigis, italian, expensive, midtown).
+restaurant(taco_loco, mexican, cheap, downtown).
+restaurant(green_leaf, vegetarian, moderate, uptown).
+restaurant(burger_barn, american, cheap, midtown).
+restaurant(le_petit, french, expensive, downtown).
+restaurant(curry_house, indian, moderate, uptown).
+restaurant(pho_king, vietnamese, cheap, downtown).
+
+% Operating hours: open(Restaurant, Day)
+open(sakura, weekday). open(sakura, weekend).
+open(luigis, weekday). open(luigis, weekend).
+open(taco_loco, weekday). open(taco_loco, weekend).
+open(green_leaf, weekday).
+open(burger_barn, weekday). open(burger_barn, weekend).
+open(le_petit, weekend).
+open(curry_house, weekday). open(curry_house, weekend).
+open(pho_king, weekday).
+
+% Allergen info: contains_allergen(Restaurant, Allergen)
+contains_allergen(sakura, shellfish).
+contains_allergen(sakura, soy).
+contains_allergen(luigis, gluten).
+contains_allergen(luigis, dairy).
+contains_allergen(burger_barn, gluten).
+contains_allergen(burger_barn, dairy).
+contains_allergen(curry_house, nuts).
+contains_allergen(le_petit, gluten).
+contains_allergen(le_petit, dairy).
+
+% ---- User Preferences (like extracted parent predicates) ----
+% These would be extracted by the LLM from user input:
+% "I want something moderate or cheap, downtown, this weekend.
+%  I'm allergic to dairy."
+
+user_pref_cuisine(any).      % or specific cuisine
+user_pref_price(moderate).
+user_pref_price(cheap).
+user_pref_location(downtown).
+user_day(weekend).
+user_allergy(dairy).
+
+% ---- Matching Rules (like recommend/1 in ADHD coach) ----
+
+% Price match
+price_match(R) :- restaurant(R, _, Price, _), user_pref_price(Price).
+price_match(R) :- restaurant(R, _, _, _), user_pref_price(any).
+
+% Cuisine match
+cuisine_match(R) :- restaurant(R, Cuisine, _, _), user_pref_cuisine(Cuisine).
+cuisine_match(R) :- restaurant(R, _, _, _), user_pref_cuisine(any).
+
+% Location match
+location_match(R) :- restaurant(R, _, _, Loc), user_pref_location(Loc).
+location_match(R) :- restaurant(R, _, _, _), user_pref_location(any).
+
+% Availability match
+available(R) :- open(R, Day), user_day(Day).
+
+% Allergen safe
+allergen_safe(R) :-
+    restaurant(R, _, _, _),
+    not has_user_allergen(R).
+
+has_user_allergen(R) :-
+    contains_allergen(R, A),
+    user_allergy(A).
+
+% Core recommendation: all criteria must pass
+candidate(R) :-
+    restaurant(R, _, _, _),
+    price_match(R),
+    cuisine_match(R),
+    location_match(R),
+    available(R),
+    allergen_safe(R).
+
+% ---- Scoring System (like priority ranking) ----
+% Count how many bonus criteria each candidate meets
+% Bonus: matches multiple price preferences, popular cuisine, etc.
+
+score(R, S) :-
+    candidate(R),
+    S = #count{ Criterion : bonus(R, Criterion) }.
+
+bonus(R, price) :- candidate(R), restaurant(R, _, cheap, _).
+bonus(R, veggie_option) :- candidate(R), restaurant(R, vegetarian, _, _).
+bonus(R, central) :- candidate(R), restaurant(R, _, _, downtown).
+
+% Top recommendation: candidate with highest score
+top_recommendation(R) :-
+    candidate(R),
+    score(R, S),
+    not beaten(R).
+
+beaten(R) :-
+    candidate(R), candidate(R2),
+    score(R, S1), score(R2, S2),
+    S2 > S1.
+
+% ---- Integrity Constraints (like safety constraints) ----
+
+% NEVER recommend a restaurant with the user's allergen
+:- candidate(R), has_user_allergen(R).
+
+% NEVER recommend a closed restaurant
+:- candidate(R), not available(R).
+
+% Must have at least one recommendation or report no matches
+no_matches :- not has_candidate.
+has_candidate :- candidate(_).
+
+% ---- Output Directives (what the LLM sees) ----
+#show candidate/1.
+#show top_recommendation/1.
+#show score/2.
+#show no_matches/0.
+
+% ========================================
+% Expected Output for the given preferences:
+% ========================================
+% Available downtown restaurants on weekend:
+%   sakura:    moderate, downtown, weekend -> YES price, YES location
+%              allergen: shellfish, soy -> no dairy -> SAFE
+%              -> candidate(sakura), bonus: central -> score = 1
+%
+%   taco_loco: cheap, downtown, weekend -> YES price, YES location
+%              no allergens listed -> SAFE
+%              -> candidate(taco_loco), bonus: price + central -> score = 2
+%
+%   le_petit:  expensive, downtown, weekend -> NO price match
+%              -> NOT a candidate
+%
+%   pho_king:  cheap, downtown -> NOT open weekend
+%              -> NOT available
+%
+% Answer set:
+%   candidate(sakura).        score(sakura, 1).
+%   candidate(taco_loco).     score(taco_loco, 2).
+%   top_recommendation(taco_loco).</code></pre>
+    <p>This restaurant recommender follows the <strong>identical pattern</strong> as the FirstThen ADHD coaching chatbot. Compare the components:
+    <br><br>
+    <strong>Restaurant facts</strong> = ADHD strategy knowledge base<br>
+    <strong>User preferences</strong> = Extracted parent predicates<br>
+    <strong>Matching rules</strong> = <code>recommend/1</code> rule<br>
+    <strong>Allergen constraints</strong> = Safety constraints (no medication, no diagnosis)<br>
+    <strong>Availability check</strong> = Age-appropriate filtering<br>
+    <strong>Scoring</strong> = Strategy prioritization<br>
+    <strong>#show directives</strong> = Response predicates sent to LLM<br>
+    <br>
+    This is the AutoConcierge pattern from Gopal Gupta's research group. The ASP program encodes domain expertise declaratively, the LLM extracts user intent into predicates, the solver finds valid recommendations, and integrity constraints ensure safety. Swap restaurant facts for ADHD strategies and allergen checks for clinical safety constraints, and you have the FirstThen architecture.</p>
+  </div>
+</div>
   <div class="nav-buttons">
     <span class="nav-btn nav-prev">&larr; Previous</span>
     <span class="nav-btn nav-next">Next: Interview Prep &rarr;</span>
   </div>
 </section>
-
 <!-- ============================================ -->
 <!-- CHAPTER 11: INTERVIEW PREP -->
 <!-- ============================================ -->

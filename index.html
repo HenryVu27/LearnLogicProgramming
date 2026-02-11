@@ -722,7 +722,1025 @@ flies(X) :- bird(X),             abnormal(tux) :- penguin(tux).
   </div>
 </section>
 
-<!-- Chapters 6-11 and ref will be added next -->
+<!-- ============================================ -->
+<!-- CHAPTER 6: ASP IN PRACTICE -->
+<!-- ============================================ -->
+<section id="ch6">
+  <h2><span class="ch-num">6.</span> ASP in Practice (Clingo)</h2>
+  <p class="ch-subtitle">Writing and running real ASP programs with the Clingo solver.</p>
+
+  <h3>Clingo: The Standard ASP Solver</h3>
+  <p>Clingo is from the <strong>Potassco project</strong> (University of Potsdam). It's the most widely used ASP solver. You write <code>.lp</code> files and run them:</p>
+
+  <pre><code><span class="cm">% Install: pip install clingo</span>
+<span class="cm">% Or download from https://potassco.org/clingo/</span>
+
+<span class="cm">% Run: clingo program.lp</span>
+<span class="cm">% Run with N answer sets: clingo program.lp N</span>
+<span class="cm">% Run all answer sets: clingo program.lp 0</span></code></pre>
+
+  <h3>Program Structure</h3>
+  <p>A typical Clingo program has three parts: <strong>Generate</strong>, <strong>Define</strong>, <strong>Test</strong>:</p>
+
+  <pre><code><span class="cm">% ---- GENERATE: what choices exist ----</span>
+<span class="num">1</span> { <span class="fn">assign</span>(<span class="var">Child</span>, <span class="var">Strategy</span>) : <span class="fn">strategy</span>(<span class="var">Strategy</span>) } <span class="num">3</span>
+    <span class="op">:-</span> <span class="fn">child</span>(<span class="var">Child</span>).
+
+<span class="cm">% ---- DEFINE: derive additional knowledge ----</span>
+<span class="fn">has_strategy</span>(<span class="var">C</span>) <span class="op">:-</span> <span class="fn">assign</span>(<span class="var">C</span>, <span class="var">_</span>).
+<span class="fn">novel</span>(<span class="var">C</span>, <span class="var">S</span>) <span class="op">:-</span> <span class="fn">assign</span>(<span class="var">C</span>, <span class="var">S</span>), <span class="op">not</span> <span class="fn">tried</span>(<span class="var">C</span>, <span class="var">S</span>).
+
+<span class="cm">% ---- TEST: eliminate invalid combinations ----</span>
+<span class="op">:-</span> <span class="fn">assign</span>(<span class="var">C</span>, <span class="var">S</span>), <span class="fn">contraindicated</span>(<span class="var">C</span>, <span class="var">S</span>).
+<span class="op">:-</span> <span class="fn">child</span>(<span class="var">C</span>), <span class="op">not</span> <span class="fn">has_strategy</span>(<span class="var">C</span>).
+
+<span class="kw">#show</span> <span class="fn">assign</span>/<span class="num">2</span>.</code></pre>
+
+  <h3>Encoding Patterns</h3>
+
+  <h4>Pattern 1: State Machine (Conversation Phases)</h4>
+  <pre><code><span class="cm">% Phases</span>
+<span class="fn">phase</span>(<span class="st">intake</span>). <span class="fn">phase</span>(<span class="st">strategy</span>). <span class="fn">phase</span>(<span class="st">progress</span>). <span class="fn">phase</span>(<span class="st">followup</span>).
+
+<span class="cm">% Exactly one phase active</span>
+<span class="num">1</span> { <span class="fn">current</span>(<span class="var">P</span>) : <span class="fn">phase</span>(<span class="var">P</span>) } <span class="num">1</span>.
+
+<span class="cm">% Transition rules (constraints on which phase can be active)</span>
+<span class="op">:-</span> <span class="fn">current</span>(<span class="st">strategy</span>), <span class="op">not</span> <span class="fn">intake_done</span>.
+<span class="op">:-</span> <span class="fn">current</span>(<span class="st">progress</span>), <span class="op">not</span> <span class="fn">strategy_selected</span>.
+
+<span class="cm">% Intake is done when all required info gathered</span>
+<span class="fn">intake_done</span> <span class="op">:-</span> <span class="fn">has_age</span>, <span class="fn">has_challenge</span>, <span class="fn">has_diagnosis</span>.</code></pre>
+
+  <h4>Pattern 2: Classification / Matching</h4>
+  <pre><code><span class="cm">% Map behaviors to topics</span>
+<span class="fn">maps_to</span>(<span class="st">distraction</span>, <span class="st">homework</span>).
+<span class="fn">maps_to</span>(<span class="st">avoidance</span>, <span class="st">homework</span>).
+<span class="fn">maps_to</span>(<span class="st">meltdown</span>, <span class="st">emotional_regulation</span>).
+<span class="fn">maps_to</span>(<span class="st">tantrums</span>, <span class="st">emotional_regulation</span>).
+<span class="fn">maps_to</span>(<span class="st">wont_stop</span>, <span class="st">transitions</span>).
+
+<span class="cm">% Determine relevant topic from extracted behavior</span>
+<span class="fn">relevant_topic</span>(<span class="var">T</span>) <span class="op">:-</span> <span class="fn">behavior</span>(<span class="var">B</span>), <span class="fn">maps_to</span>(<span class="var">B</span>, <span class="var">T</span>).
+
+<span class="cm">% Get strategies for relevant topics</span>
+<span class="fn">applicable</span>(<span class="var">S</span>) <span class="op">:-</span> <span class="fn">relevant_topic</span>(<span class="var">T</span>), <span class="fn">strategy_for</span>(<span class="var">T</span>, <span class="var">S</span>).</code></pre>
+
+  <h4>Pattern 3: Default Reasoning</h4>
+  <pre><code><span class="cm">% Default: topics are approved unless explicitly blocked</span>
+<span class="fn">approved</span>(<span class="var">T</span>) <span class="op">:-</span> <span class="fn">topic</span>(<span class="var">T</span>), <span class="op">not</span> <span class="fn">blocked</span>(<span class="var">T</span>).
+
+<span class="cm">% These are explicitly blocked</span>
+<span class="fn">blocked</span>(<span class="st">medication</span>).
+<span class="fn">blocked</span>(<span class="st">diagnosis</span>).
+<span class="fn">blocked</span>(<span class="st">legal_advice</span>).
+
+<span class="cm">% Everything not blocked is approved by default.</span>
+<span class="cm">% This is the Closed World Assumption at work.</span></code></pre>
+
+  <h3>Running Clingo from Python</h3>
+  <pre><code><span class="kw">import</span> clingo
+
+<span class="kw">def</span> <span class="fn">solve</span>(program_text):
+    ctl = clingo.Control()
+    ctl.add(<span class="st">"base"</span>, [], program_text)
+    ctl.ground([(<span class="st">"base"</span>, [])])
+
+    solutions = []
+    <span class="kw">with</span> ctl.solve(yield_=<span class="kw">True</span>) <span class="kw">as</span> handle:
+        <span class="kw">for</span> model <span class="kw">in</span> handle:
+            solutions.append([<span class="fn">str</span>(atom) <span class="kw">for</span> atom <span class="kw">in</span> model.symbols(shown=<span class="kw">True</span>)])
+    <span class="kw">return</span> solutions
+
+program = <span class="st">"""
+child(max). child_age(max, 7). diagnosed(max, adhd).
+challenge(max, homework).
+
+strategy(visual_schedule). strategy(first_then). strategy(timer).
+for_challenge(visual_schedule, homework).
+for_challenge(first_then, homework).
+for_challenge(timer, homework).
+
+tried(max, timer). outcome(timer, negative).
+
+applicable(S) :- strategy(S), challenge(_, C), for_challenge(S, C).
+blocked(S) :- tried(_, S), outcome(S, negative).
+recommend(S) :- applicable(S), not blocked(S).
+
+:- recommend(S), medication(S).
+
+#show recommend/1.
+"""</span>
+
+results = solve(program)
+<span class="kw">for</span> ans <span class="kw">in</span> results:
+    <span class="fn">print</span>(<span class="st">"Answer set:"</span>, ans)
+<span class="cm"># Output: Answer set: ['recommend(visual_schedule)', 'recommend(first_then)']</span></code></pre>
+
+  <div class="exercise">
+    <div class="exercise-header">
+      <span class="exercise-badge">Exercise</span>
+      <span class="exercise-title">Write an ASP conversation controller</span>
+    </div>
+    <p>Model a 3-phase conversation (intake &rarr; strategy &rarr; progress). Define what information is needed for each transition. Add safety constraints that prevent discussing medication or making diagnoses. Use <code>#show</code> to output only the current phase and recommended actions.</p>
+    <button class="solution-toggle">Show Solution</button>
+    <div class="solution">
+      <pre><code><span class="cm">% Phases</span>
+<span class="fn">phase</span>(<span class="st">intake</span>). <span class="fn">phase</span>(<span class="st">strategy</span>). <span class="fn">phase</span>(<span class="st">progress</span>).
+
+<span class="cm">% Context (simulate extracted predicates)</span>
+<span class="fn">has_age</span>. <span class="fn">has_challenge</span>. <span class="fn">has_diagnosis</span>.
+<span class="cm">% Comment out lines above to test different states</span>
+
+<span class="cm">% Phase transitions</span>
+<span class="fn">intake_done</span> <span class="op">:-</span> <span class="fn">has_age</span>, <span class="fn">has_challenge</span>, <span class="fn">has_diagnosis</span>.
+<span class="fn">current</span>(<span class="st">intake</span>) <span class="op">:-</span> <span class="op">not</span> <span class="fn">intake_done</span>.
+<span class="fn">current</span>(<span class="st">strategy</span>) <span class="op">:-</span> <span class="fn">intake_done</span>, <span class="op">not</span> <span class="fn">strategy_selected</span>.
+<span class="fn">current</span>(<span class="st">progress</span>) <span class="op">:-</span> <span class="fn">strategy_selected</span>.
+
+<span class="cm">% Actions per phase</span>
+<span class="fn">action</span>(<span class="st">ask_age</span>) <span class="op">:-</span> <span class="fn">current</span>(<span class="st">intake</span>), <span class="op">not</span> <span class="fn">has_age</span>.
+<span class="fn">action</span>(<span class="st">ask_challenge</span>) <span class="op">:-</span> <span class="fn">current</span>(<span class="st">intake</span>), <span class="op">not</span> <span class="fn">has_challenge</span>.
+<span class="fn">action</span>(<span class="st">recommend</span>) <span class="op">:-</span> <span class="fn">current</span>(<span class="st">strategy</span>).
+<span class="fn">action</span>(<span class="st">check_progress</span>) <span class="op">:-</span> <span class="fn">current</span>(<span class="st">progress</span>).
+
+<span class="cm">% Safety constraints</span>
+<span class="op">:-</span> <span class="fn">action</span>(<span class="st">prescribe_medication</span>).
+<span class="op">:-</span> <span class="fn">action</span>(<span class="st">diagnose</span>).
+<span class="op">:-</span> <span class="fn">discusses</span>(<span class="var">T</span>), <span class="op">not</span> <span class="fn">approved</span>(<span class="var">T</span>).
+<span class="fn">approved</span>(<span class="st">behavioral_strategies</span>). <span class="fn">approved</span>(<span class="st">daily_routines</span>).
+
+<span class="kw">#show</span> <span class="fn">current</span>/<span class="num">1</span>.
+<span class="kw">#show</span> <span class="fn">action</span>/<span class="num">1</span>.</code></pre>
+    </div>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: s(CASP) &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 7: s(CASP) -->
+<!-- ============================================ -->
+<section id="ch7">
+  <h2><span class="ch-num">7.</span> s(CASP): Goal-Directed ASP</h2>
+  <p class="ch-subtitle">Gopal Gupta's innovation &mdash; the actual technology behind FirstThen.</p>
+
+  <h3>Why s(CASP)?</h3>
+  <p>Remember: traditional ASP (Clingo) grounds the entire program before solving. s(CASP) takes a fundamentally different approach:</p>
+
+  <table>
+    <tr><th>Feature</th><th>Clingo (traditional ASP)</th><th>s(CASP)</th></tr>
+    <tr><td>Execution</td><td>Bottom-up, SAT-solver based</td><td><strong>Top-down, goal-directed</strong> (like Prolog)</td></tr>
+    <tr><td>Grounding</td><td>Must ground all variables first</td><td><strong>No grounding needed</strong></td></tr>
+    <tr><td>Variables</td><td>Must be ground before solving</td><td><strong>Retains logical variables</strong></td></tr>
+    <tr><td>Infinite domains</td><td>Cannot handle</td><td><strong>Handles naturally</strong> (via constraints)</td></tr>
+    <tr><td>Explainability</td><td>Answer sets only</td><td><strong>Justification trees</strong></td></tr>
+    <tr><td>Semantics</td><td>Stable model</td><td>Stable model (same!)</td></tr>
+    <tr><td>Speed</td><td>Fast for finite, ground problems</td><td><strong>~8ms per query</strong> (goal-directed)</td></tr>
+  </table>
+
+  <div class="callout key">
+    <div class="callout-title">The Best of Both Worlds</div>
+    <p>s(CASP) = <strong>ASP semantics</strong> (stable models, integrity constraints, proper negation) + <strong>Prolog execution</strong> (top-down, goal-directed, only computes what's needed). It gives you ASP's logical guarantees with Prolog's efficiency.</p>
+  </div>
+
+  <h3>s(CASP) Syntax</h3>
+  <p>s(CASP) runs inside <strong>SWI-Prolog</strong>. The syntax is very close to Prolog with ASP extensions:</p>
+
+  <pre><code><span class="kw">:- use_module</span>(library(scasp)).
+
+<span class="cm">% Facts and rules look like Prolog</span>
+<span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">bob</span>).
+<span class="fn">parent</span>(<span class="st">bob</span>, <span class="st">ann</span>).
+<span class="fn">ancestor</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">X</span>, <span class="var">Y</span>).
+<span class="fn">ancestor</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">X</span>, <span class="var">Z</span>), <span class="fn">ancestor</span>(<span class="var">Z</span>, <span class="var">Y</span>).
+
+<span class="cm">% Negation as Failure works like ASP (stable model semantics)</span>
+<span class="fn">flies</span>(<span class="var">X</span>) <span class="op">:-</span> <span class="fn">bird</span>(<span class="var">X</span>), <span class="op">not</span> <span class="fn">abnormal</span>(<span class="var">X</span>).
+<span class="fn">abnormal</span>(<span class="var">X</span>) <span class="op">:-</span> <span class="fn">penguin</span>(<span class="var">X</span>).
+
+<span class="cm">% Queries use scasp/2</span>
+<span class="cm">% ?- scasp(flies(tweety), []).</span></code></pre>
+
+  <h3>Two Kinds of Negation</h3>
+  <p>This is critical. s(CASP) supports both:</p>
+
+  <h4>Negation as Failure: <code>not p</code></h4>
+  <p>"I cannot prove p, so I assume it's false." (Closed World Assumption)</p>
+  <pre><code><span class="cm">% "A topic is safe unless explicitly flagged"</span>
+<span class="fn">safe_topic</span>(<span class="var">T</span>) <span class="op">:-</span> <span class="fn">topic</span>(<span class="var">T</span>), <span class="op">not</span> <span class="fn">flagged</span>(<span class="var">T</span>).
+<span class="cm">% If nothing says T is flagged, then it's safe by default.</span></code></pre>
+
+  <h4>Classical (Strong) Negation: <code>-p</code></h4>
+  <p>"p is explicitly false." A positive assertion of falsehood.</p>
+  <pre><code><span class="cm">% "Penguins explicitly do NOT fly"</span>
+<span class="op">-</span><span class="fn">flies</span>(<span class="st">penguin</span>).
+
+<span class="cm">% "We explicitly do NOT provide medication advice"</span>
+<span class="op">-</span><span class="fn">provides</span>(<span class="st">medication_advice</span>).
+
+<span class="cm">% Innocent until proven guilty:</span>
+<span class="op">-</span><span class="fn">guilty</span>(<span class="var">X</span>) <span class="op">:-</span> <span class="op">not</span> <span class="fn">guilty</span>(<span class="var">X</span>).
+<span class="cm">% "X is explicitly not-guilty if we cannot prove X is guilty"</span></code></pre>
+
+  <div class="callout warn">
+    <div class="callout-title">not vs - : Know the Difference</div>
+    <p><code>not p</code>: "We have no evidence for p" (default, can be overridden by new info)<br>
+    <code>-p</code>: "p is definitely false" (strong claim, explicit knowledge)<br><br>
+    For the chatbot: <code>not approved(topic)</code> means "this topic isn't on our approved list" (CWA). <code>-safe(action)</code> means "this action is explicitly unsafe" (stronger claim).</p>
+  </div>
+
+  <h3>Justification Trees: The Killer Feature</h3>
+  <p>s(CASP) doesn't just give you answers &mdash; it explains <em>why</em>:</p>
+
+  <pre><code><span class="cm">% Query: why suggest visual_schedule?</span>
+<span class="cm">% ?- scasp(suggest(visual_schedule), [tree(T)]).</span>
+
+<span class="cm">% Justification tree output:</span>
+<span class="cm">% suggest(visual_schedule) holds because:</span>
+<span class="cm">%   challenge(max, homework_avoidance) is a fact</span>
+<span class="cm">%   AND for_challenge(visual_schedule, homework_avoidance) is a fact</span>
+<span class="cm">%   AND not blocked(visual_schedule) holds because:</span>
+<span class="cm">%     there is no evidence that blocked(visual_schedule) is true</span>
+<span class="cm">%       (no fact tried(_, visual_schedule) exists)</span></code></pre>
+
+  <div class="callout success">
+    <div class="callout-title">Why Justification Trees Matter for Healthcare</div>
+    <p>When a parent asks "Why did you suggest this?", the system can generate a precise, logically grounded explanation. When a clinician audits the system, every recommendation has a complete proof trace. When regulators review the product (FDA, EU MDR), the reasoning is fully transparent. Forsante Oy achieved EU MDR Class IIb certification with s(CASP) partly because of this capability.</p>
+  </div>
+
+  <h3>Integrity Constraints in s(CASP)</h3>
+  <p>In s(CASP), constraints use <code>false</code> as the head (unlike Clingo's headless <code>:-</code> syntax):</p>
+
+  <pre><code><span class="cm">% Clingo syntax:</span>
+<span class="cm">% :- recommend(X), medication(X).</span>
+
+<span class="cm">% s(CASP) syntax:</span>
+<span class="st">false</span> <span class="op">:-</span> <span class="fn">recommend</span>(<span class="var">X</span>), <span class="fn">medication</span>(<span class="var">X</span>).
+
+<span class="cm">% Or using global constraints:</span>
+<span class="kw">:- use_module</span>(library(scasp)).
+<span class="kw">#abducible</span> <span class="fn">recommend</span>/<span class="num">1</span>.
+<span class="cm">% false :- recommend(X), medication(X).</span></code></pre>
+
+  <h3>s(CASP) vs Clingo: When to Use What?</h3>
+  <table>
+    <tr><th>Use Case</th><th>Best Choice</th><th>Why</th></tr>
+    <tr><td>Chatbot (real-time query)</td><td>s(CASP)</td><td>Goal-directed, ~8ms, explains answers</td></tr>
+    <tr><td>Combinatorial optimization</td><td>Clingo</td><td>SAT-solver is faster for enumeration</td></tr>
+    <tr><td>Infinite/continuous domains</td><td>s(CASP)</td><td>No grounding needed</td></tr>
+    <tr><td>Healthcare decisions</td><td>s(CASP)</td><td>Justification trees for audit/compliance</td></tr>
+    <tr><td>Rapid prototyping</td><td>Clingo</td><td>Simpler tooling, easier to start</td></tr>
+  </table>
+
+  <p>For the FirstThen role, you'd use <strong>both</strong>: Clingo for prototyping and testing ideas quickly, s(CASP) for the production system.</p>
+
+  <div class="exercise">
+    <div class="exercise-header">
+      <span class="exercise-badge">Exercise</span>
+      <span class="exercise-title">Trace a justification tree by hand</span>
+    </div>
+    <p>Given these rules, trace the justification for <code>recommend(calm_corner)</code>:</p>
+    <pre><code><span class="fn">challenge</span>(<span class="st">max</span>, <span class="st">meltdowns</span>).
+<span class="fn">maps_to</span>(<span class="st">meltdowns</span>, <span class="st">emotional_regulation</span>).
+<span class="fn">strategy_for</span>(<span class="st">emotional_regulation</span>, <span class="st">calm_corner</span>).
+<span class="fn">relevant</span>(<span class="var">T</span>) <span class="op">:-</span> <span class="fn">challenge</span>(<span class="var">_</span>, <span class="var">B</span>), <span class="fn">maps_to</span>(<span class="var">B</span>, <span class="var">T</span>).
+<span class="fn">recommend</span>(<span class="var">S</span>) <span class="op">:-</span> <span class="fn">relevant</span>(<span class="var">T</span>), <span class="fn">strategy_for</span>(<span class="var">T</span>, <span class="var">S</span>), <span class="op">not</span> <span class="fn">blocked</span>(<span class="var">S</span>).</code></pre>
+    <button class="solution-toggle">Show Solution</button>
+    <div class="solution">
+      <pre><code><span class="cm">recommend(calm_corner) holds because:</span>
+<span class="cm">  relevant(emotional_regulation) holds because:</span>
+<span class="cm">    challenge(max, meltdowns) is a fact</span>
+<span class="cm">    AND maps_to(meltdowns, emotional_regulation) is a fact</span>
+<span class="cm">  AND strategy_for(emotional_regulation, calm_corner) is a fact</span>
+<span class="cm">  AND not blocked(calm_corner) holds because:</span>
+<span class="cm">    there is no evidence that blocked(calm_corner) is true</span></code></pre>
+      <p>This is exactly what s(CASP) would generate. Each step is traceable back to either a fact or the absence of evidence (negation as failure).</p>
+    </div>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: STAR Framework &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 8: STAR FRAMEWORK -->
+<!-- ============================================ -->
+<section id="ch8">
+  <h2><span class="ch-num">8.</span> The STAR Framework</h2>
+  <p class="ch-subtitle">How LLMs and ASP work together &mdash; the architecture you'd be building.</p>
+
+  <h3>STAR = Semantic-parsing Transformer + ASP Reasoner</h3>
+  <p>This is the hybrid architecture developed by <strong>Gopal Gupta's group at UT Dallas</strong>. It's the blueprint for FirstThen's chatbot, CorroHealth's medical coding system, and all of Gupta's recent applied work.</p>
+
+  <h3>The Three-Layer Pipeline</h3>
+  <div class="diagram">User: "My son Max keeps avoiding his homework.
+       He's 7 and was diagnosed with ADHD last year.
+       I've tried yelling but it makes things worse."
+              |
+              v
++--------------------------------------------+
+| LAYER 1: LLM Semantic Parser               |
+| (GPT-4, Gemini, Mistral, etc.)             |
+|                                             |
+| Extracts predicates from natural language:  |
+|   parent(user).                             |
+|   child(user, max).                         |
+|   child_age(max, 7).                        |
+|   diagnosed(max, adhd).                     |
+|   challenge(max, homework_avoidance).       |
+|   tried(user, yelling).                     |
+|   outcome(yelling, negative).               |
++--------------------------------------------+
+              |
+              v  (structured predicates)
++--------------------------------------------+
+| LAYER 2: s(CASP) Reasoning Engine           |
+|                                             |
+| Applies rules + constraints:                |
+|   -> intake_complete(user).  (all info in)  |
+|   -> current_phase(strategy).               |
+|   -> recommend(visual_schedule).            |
+|   -> recommend(first_then_board).           |
+|   -> do_not_recommend(yelling). (failed)    |
+|   -> safe_response(true).                   |
+|                                             |
+| Execution time: ~8ms                        |
++--------------------------------------------+
+              |
+              v  (response predicates + justification)
++--------------------------------------------+
+| LAYER 3: LLM Response Generator            |
+|                                             |
+| Converts predicates to natural language:    |
+| "Thank you for sharing about Max. Since     |
+|  yelling hasn't worked, let me suggest two  |
+|  approaches: a Visual Schedule and a        |
+|  First-Then Board..."                       |
++--------------------------------------------+
+              |
+              v
+         User sees response</div>
+
+  <div class="callout danger">
+    <div class="callout-title">The Critical Insight</div>
+    <p>The LLM <strong>never makes decisions</strong>. It's used twice as a <strong>translator</strong>:<br>
+    1. <strong>Input:</strong> Natural language &rarr; structured predicates<br>
+    2. <strong>Output:</strong> Response predicates &rarr; natural language<br><br>
+    <strong>ALL reasoning, ALL safety checks, ALL conversation flow decisions happen in the ASP layer.</strong> This is why the system is reliable &mdash; the logic is formally verifiable, not probabilistic.</p>
+  </div>
+
+  <h3>Layer 1: Predicate Extraction</h3>
+  <p>The LLM is given a <strong>predefined vocabulary</strong> of predicates. It cannot invent its own:</p>
+
+  <pre><code><span class="cm">SYSTEM PROMPT to LLM:</span>
+<span class="st">"You are a semantic parser. Convert the user's message into
+ONLY these predicates:
+
+- parent(Name)
+- child(Parent, ChildName)
+- child_age(Child, Age)
+- diagnosed(Child, Condition)
+- challenge(Child, ChallengeType)
+    ChallengeType: homework_avoidance | bedtime_resistance |
+                   emotional_dysregulation | transition_difficulty
+- tried(Parent, StrategyName)
+- outcome(Strategy, positive | negative | neutral)
+- parent_emotion(Emotion)
+    Emotion: frustrated | exhausted | hopeful | overwhelmed
+- mentions(Topic)
+    Used to flag safety concerns: self_harm | abuse | suicidal
+
+Output ONLY valid predicates, one per line. No other text."</span></code></pre>
+
+  <p>This constrained vocabulary maps directly to the ASP program's expected inputs. The LLM is a structured information extractor, nothing more.</p>
+
+  <h3>Layer 2: ASP Reasoning</h3>
+  <p>The extracted predicates feed into the ASP rules. The rules handle:</p>
+  <ul>
+    <li><strong>Conversation state:</strong> What phase are we in? What info do we still need?</li>
+    <li><strong>Strategy matching:</strong> Which strategies apply to this family's situation?</li>
+    <li><strong>Safety constraints:</strong> Is this response allowed? Any crisis indicators?</li>
+    <li><strong>Response planning:</strong> What predicates should the response convey?</li>
+  </ul>
+
+  <h3>Layer 3: Response Generation</h3>
+  <p>The LLM takes response predicates and generates a human-readable message:</p>
+
+  <pre><code><span class="cm">SYSTEM PROMPT to LLM:</span>
+<span class="st">"Generate a warm, empathetic response for a parent.
+The response must convey EXACTLY these points:
+
+- recommend(visual_schedule): Explain what a visual schedule is
+  and how to use it for homework
+- recommend(first_then_board): Explain the First-Then approach
+- acknowledge(frustration): Validate their struggle with yelling
+- phase(strategy): This is a strategy discussion
+
+Tone: supportive, non-judgmental, actionable
+Do NOT mention medication, diagnosis, or anything medical.
+Keep it to 2-3 paragraphs."</span></code></pre>
+
+  <h3>Conversational Knowledge Templates (CKTs)</h3>
+  <p>CKTs are <strong>ASP-encoded state machines</strong> that manage dialog flow. Each topic has a template that tracks which properties have been discussed:</p>
+
+  <pre><code><span class="cm">% CKT: properties to gather about homework challenges</span>
+<span class="fn">property</span>(<span class="st">homework</span>, <span class="st">when_occurs</span>).
+<span class="fn">property</span>(<span class="st">homework</span>, <span class="st">duration</span>).
+<span class="fn">property</span>(<span class="st">homework</span>, <span class="st">child_reaction</span>).
+<span class="fn">property</span>(<span class="st">homework</span>, <span class="st">parent_response</span>).
+
+<span class="cm">% Track which properties are filled</span>
+<span class="fn">filled</span>(<span class="st">homework</span>, <span class="st">when_occurs</span>) <span class="op">:-</span> <span class="fn">extracted</span>(<span class="fn">time_of_day</span>(<span class="var">_</span>)).
+<span class="fn">filled</span>(<span class="st">homework</span>, <span class="st">child_reaction</span>) <span class="op">:-</span> <span class="fn">extracted</span>(<span class="fn">behavior</span>(<span class="var">_</span>)).
+
+<span class="cm">% Determine next question: ask about unfilled properties</span>
+<span class="fn">next_ask</span>(<span class="var">Topic</span>, <span class="var">Prop</span>) <span class="op">:-</span>
+    <span class="fn">current_topic</span>(<span class="var">Topic</span>),
+    <span class="fn">property</span>(<span class="var">Topic</span>, <span class="var">Prop</span>),
+    <span class="op">not</span> <span class="fn">filled</span>(<span class="var">Topic</span>, <span class="var">Prop</span>).
+
+<span class="cm">% Topic is complete when all properties filled</span>
+<span class="fn">topic_complete</span>(<span class="var">T</span>) <span class="op">:-</span>
+    <span class="fn">topic</span>(<span class="var">T</span>),
+    <span class="op">not</span> <span class="fn">has_unfilled</span>(<span class="var">T</span>).
+<span class="fn">has_unfilled</span>(<span class="var">T</span>) <span class="op">:-</span>
+    <span class="fn">property</span>(<span class="var">T</span>, <span class="var">P</span>),
+    <span class="op">not</span> <span class="fn">filled</span>(<span class="var">T</span>, <span class="var">P</span>).</code></pre>
+
+  <p>This is the <strong>"conversation architecture"</strong> the job description mentions. The ASP rules dictate what to ask, when, and how to transition. No hallucination can break this flow.</p>
+
+  <h3>Multi-Stage Predicate Extraction</h3>
+  <p>Recent work (AutoManager, 2025) uses a <strong>two-stage approach</strong> for better extraction accuracy:</p>
+
+  <pre><code><span class="cm">Stage 1: LLM extracts initial predicates</span>
+<span class="cm">  Input: "My kid won't stop playing and come to dinner"</span>
+<span class="cm">  Output: behavior(wont_stop), context(dinner), challenge(transitions)</span>
+
+<span class="cm">Stage 2: ASP validates and enhances</span>
+<span class="cm">  - Check: is behavior(wont_stop) a valid predicate? YES</span>
+<span class="cm">  - Derive: maps_to(wont_stop, transitions) --> relevant_topic(transitions)</span>
+<span class="cm">  - Check: are there contradictions? NO</span>
+<span class="cm">  - Add: strategy_for(transitions, countdown_warnings)</span>
+
+<span class="cm">This two-stage approach improved F1 from 73.7% to 80.9%</span>
+<span class="cm">(tested with Llama 3.1:8b)</span></code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">Performance Numbers to Know</div>
+    <p>s(CASP) reasoning: <strong>~8ms per call</strong><br>
+    Multi-stage extraction F1: <strong>80.9%</strong> (Llama 3.1:8b)<br>
+    Mistral 3.1-small one-shot: <strong>F1 of 0.82</strong><br>
+    AutoManager (Taco Bell demo) vs real Taco Bell AI:<br>
+    &nbsp;&nbsp;Understanding: <strong>9.18 vs 8.04</strong>, Truthfulness: <strong>9.50 vs 9.00</strong></p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-question">In the STAR framework, what role does the LLM play?</p>
+    <button class="quiz-option" data-correct="false">Makes reasoning decisions about what to recommend</button>
+    <button class="quiz-option" data-correct="false">Enforces safety constraints on the response</button>
+    <button class="quiz-option" data-correct="true">Translator only: NL-to-predicates and predicates-to-NL</button>
+    <button class="quiz-option" data-correct="false">Both translator and reasoner</button>
+    <p class="quiz-explanation">Correct! The LLM is strictly a translator. It converts natural language to predicates (input) and predicates back to natural language (output). ALL reasoning and safety decisions are made by the ASP engine. This separation is what makes the system reliable.</p>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: Healthcare Chatbots &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 9: HEALTHCARE CHATBOTS -->
+<!-- ============================================ -->
+<section id="ch9">
+  <h2><span class="ch-num">9.</span> Healthcare Chatbots with ASP</h2>
+  <p class="ch-subtitle">Applying everything to FirstThen's ADHD coaching architecture.</p>
+
+  <h3>FirstThen's Chatbot = AutoConcierge for ADHD</h3>
+  <p>FirstThen's chatbot uses the same STAR architecture as Gupta's published systems, applied to ADHD parent coaching:</p>
+
+  <table>
+    <tr><th>AutoConcierge (restaurant)</th><th>FirstThen (ADHD coaching)</th></tr>
+    <tr><td><code>cuisine_type(thai)</code></td><td><code>challenge(homework_avoidance)</code></td></tr>
+    <tr><td><code>preference(curry)</code></td><td><code>behavior(meltdowns)</code></td></tr>
+    <tr><td>Goal: gather preferences, recommend</td><td>Goal: understand situation, recommend strategy</td></tr>
+    <tr><td>Bounds: only restaurants in database</td><td>Bounds: only clinician-approved strategies</td></tr>
+    <tr><td><code>:- recommend(R), not in_database(R)</code></td><td><code>:- recommend(S), not clinician_approved(S)</code></td></tr>
+  </table>
+
+  <h3>Why ASP Is Perfect for Healthcare Chatbots</h3>
+
+  <h4>1. Clinician-defined bounds = integrity constraints</h4>
+  <pre><code><span class="cm">% Clinicians define what's allowed</span>
+<span class="fn">approved_topic</span>(<span class="st">behavioral_strategies</span>).
+<span class="fn">approved_topic</span>(<span class="st">daily_routines</span>).
+<span class="fn">approved_topic</span>(<span class="st">emotional_regulation</span>).
+<span class="fn">approved_topic</span>(<span class="st">positive_reinforcement</span>).
+
+<span class="cm">% IMPOSSIBLE to discuss anything else</span>
+<span class="op">:-</span> <span class="fn">discusses</span>(<span class="var">T</span>), <span class="op">not</span> <span class="fn">approved_topic</span>(<span class="var">T</span>).
+
+<span class="cm">% IMPOSSIBLE to recommend medication</span>
+<span class="op">:-</span> <span class="fn">recommend</span>(<span class="var">X</span>), <span class="fn">medication_related</span>(<span class="var">X</span>).
+
+<span class="cm">% IMPOSSIBLE to provide diagnosis</span>
+<span class="op">:-</span> <span class="fn">action</span>(<span class="st">diagnose</span>).
+
+<span class="cm">% These are MATHEMATICAL GUARANTEES, not suggestions.</span></code></pre>
+
+  <h4>2. Every recommendation is explainable</h4>
+  <pre><code><span class="cm">% Parent: "Why did you suggest a visual schedule?"</span>
+<span class="cm">%</span>
+<span class="cm">% Justification tree:</span>
+<span class="cm">% recommend(visual_schedule) because:</span>
+<span class="cm">%   applicable(visual_schedule) because:</span>
+<span class="cm">%     challenge(max, homework_avoidance) [parent told us]</span>
+<span class="cm">%     strategy_for(homework_avoidance, visual_schedule) [clinical rule]</span>
+<span class="cm">%   not blocked(visual_schedule) because:</span>
+<span class="cm">%     no evidence of negative outcome with this strategy</span>
+<span class="cm">%   clinician_approved(visual_schedule) [in approved list]</span></code></pre>
+
+  <h4>3. Rule updates are declarative</h4>
+  <pre><code><span class="cm">% When clinical guidelines change, update rules. No retraining.</span>
+
+<span class="cm">% Old rule: countdown only for transitions</span>
+<span class="fn">strategy_for</span>(<span class="st">transitions</span>, <span class="st">countdown</span>).
+
+<span class="cm">% New clinical evidence says it also helps with homework:</span>
+<span class="fn">strategy_for</span>(<span class="st">homework</span>, <span class="st">countdown</span>).  <span class="cm">% Just add this line!</span>
+
+<span class="cm">% No retraining, no fine-tuning, no prompt engineering changes.</span></code></pre>
+
+  <h4>4. Regulatory compliance</h4>
+  <p><strong>Forsante Oy</strong> (Finland) achieved <strong>EU MDR Class IIb certification</strong> using s(CASP) for clinical decision support. The reasoning is:</p>
+  <ul>
+    <li><strong>Deterministic:</strong> Same input always produces same output</li>
+    <li><strong>Explainable:</strong> Justification trees for every decision</li>
+    <li><strong>Verifiable:</strong> Rules can be formally checked against clinical guidelines</li>
+    <li><strong>Auditable:</strong> Complete reasoning trace for regulatory review</li>
+  </ul>
+
+  <h3>Real-World Validation: Heart Failure System</h3>
+  <p>Gupta's group built a <strong>Congestive Heart Failure Advisory System</strong> encoding the full 80-page ACCF/AHA guidelines into ASP:</p>
+  <ul>
+    <li>Takes <strong>38 patient parameters</strong>, generates <strong>26 types of recommendations</strong></li>
+    <li>Tested on 31 patients: <strong>94% agreement</strong> with expert cardiologists</li>
+    <li>Found <strong>26 guideline-compliant recommendations that physicians had MISSED</strong></li>
+    <li>Flagged <strong>5 non-compliant recommendations</strong> that physicians had made</li>
+  </ul>
+
+  <div class="callout success">
+    <div class="callout-title">The Key Argument</div>
+    <p>Humans can't hold 80 pages of rules in working memory. ASP can. The system doesn't replace clinicians &mdash; it ensures nothing is overlooked. This is exactly what FirstThen does for ADHD: ensuring clinician-designed strategies are consistently and correctly delivered to parents.</p>
+  </div>
+
+  <h3>Crisis Handling Pattern</h3>
+  <pre><code><span class="cm">% Crisis indicators (from predicate extraction)</span>
+<span class="fn">crisis_indicator</span>(<span class="st">self_harm</span>).
+<span class="fn">crisis_indicator</span>(<span class="st">child_abuse</span>).
+<span class="fn">crisis_indicator</span>(<span class="st">suicidal_ideation</span>).
+
+<span class="cm">% Crisis detection</span>
+<span class="fn">crisis_detected</span> <span class="op">:-</span> <span class="fn">mentions</span>(<span class="var">X</span>), <span class="fn">crisis_indicator</span>(<span class="var">X</span>).
+
+<span class="cm">% If crisis: MUST refer, ONLY safety actions allowed</span>
+<span class="op">:-</span> <span class="fn">crisis_detected</span>, <span class="op">not</span> <span class="fn">action</span>(<span class="st">refer_professional</span>).
+<span class="op">:-</span> <span class="fn">crisis_detected</span>, <span class="fn">action</span>(<span class="var">A</span>), <span class="var">A</span> <span class="op">!=</span> <span class="st">refer_professional</span>.
+
+<span class="cm">% This is an absolute safety guarantee.</span>
+<span class="cm">% If ANY crisis indicator is extracted from the parent's message,</span>
+<span class="cm">% the system MUST refer to a professional and CANNOT do anything else.</span>
+<span class="cm">% No prompt injection, no jailbreak can override this.</span></code></pre>
+
+  <div class="exercise">
+    <div class="exercise-header">
+      <span class="exercise-badge">Exercise</span>
+      <span class="exercise-title">Design a topic boundary system</span>
+    </div>
+    <p>Write ASP rules for a coaching chatbot that:
+    (a) Has 5 approved topics with subtopics,
+    (b) Maps extracted behaviors to topics,
+    (c) Prevents discussion of unapproved topics,
+    (d) Suggests strategies only for relevant topics,
+    (e) Handles off-topic input gracefully (redirect to approved topics).</p>
+    <button class="solution-toggle">Show Solution</button>
+    <div class="solution">
+      <pre><code><span class="cm">% Approved topics</span>
+<span class="fn">topic</span>(<span class="st">homework</span>). <span class="fn">topic</span>(<span class="st">routines</span>). <span class="fn">topic</span>(<span class="st">emotions</span>).
+<span class="fn">topic</span>(<span class="st">transitions</span>). <span class="fn">topic</span>(<span class="st">reinforcement</span>).
+
+<span class="cm">% Subtopics</span>
+<span class="fn">subtopic</span>(<span class="st">homework</span>, <span class="st">getting_started</span>).
+<span class="fn">subtopic</span>(<span class="st">homework</span>, <span class="st">staying_focused</span>).
+<span class="fn">subtopic</span>(<span class="st">routines</span>, <span class="st">morning</span>).
+<span class="fn">subtopic</span>(<span class="st">routines</span>, <span class="st">bedtime</span>).
+<span class="fn">subtopic</span>(<span class="st">emotions</span>, <span class="st">anger</span>).
+<span class="fn">subtopic</span>(<span class="st">emotions</span>, <span class="st">frustration</span>).
+
+<span class="cm">% Behavior-to-topic mapping</span>
+<span class="fn">maps_to</span>(<span class="st">avoidance</span>, <span class="st">homework</span>).
+<span class="fn">maps_to</span>(<span class="st">distraction</span>, <span class="st">homework</span>).
+<span class="fn">maps_to</span>(<span class="st">meltdown</span>, <span class="st">emotions</span>).
+<span class="fn">maps_to</span>(<span class="st">wont_stop</span>, <span class="st">transitions</span>).
+<span class="fn">maps_to</span>(<span class="st">wont_start</span>, <span class="st">routines</span>).
+
+<span class="cm">% Strategies per topic</span>
+<span class="fn">strategy_for</span>(<span class="st">homework</span>, <span class="st">visual_schedule</span>).
+<span class="fn">strategy_for</span>(<span class="st">homework</span>, <span class="st">timer</span>).
+<span class="fn">strategy_for</span>(<span class="st">emotions</span>, <span class="st">calm_corner</span>).
+<span class="fn">strategy_for</span>(<span class="st">transitions</span>, <span class="st">countdown</span>).
+<span class="fn">strategy_for</span>(<span class="st">reinforcement</span>, <span class="st">token_reward</span>).
+
+<span class="cm">% Derive relevant topic from behavior</span>
+<span class="fn">relevant</span>(<span class="var">T</span>) <span class="op">:-</span> <span class="fn">behavior</span>(<span class="var">B</span>), <span class="fn">maps_to</span>(<span class="var">B</span>, <span class="var">T</span>).
+
+<span class="cm">% Suggest strategies for relevant topics only</span>
+<span class="fn">suggest</span>(<span class="var">S</span>) <span class="op">:-</span> <span class="fn">relevant</span>(<span class="var">T</span>), <span class="fn">strategy_for</span>(<span class="var">T</span>, <span class="var">S</span>).
+
+<span class="cm">% Off-topic handling</span>
+<span class="fn">off_topic</span> <span class="op">:-</span> <span class="fn">behavior</span>(<span class="var">B</span>), <span class="op">not</span> <span class="fn">has_mapping</span>(<span class="var">B</span>).
+<span class="fn">has_mapping</span>(<span class="var">B</span>) <span class="op">:-</span> <span class="fn">maps_to</span>(<span class="var">B</span>, <span class="var">_</span>).
+<span class="fn">action</span>(<span class="st">redirect</span>) <span class="op">:-</span> <span class="fn">off_topic</span>.
+
+<span class="cm">% No behavior extracted at all</span>
+<span class="fn">no_behavior</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">any_behavior</span>.
+<span class="fn">any_behavior</span> <span class="op">:-</span> <span class="fn">behavior</span>(<span class="var">_</span>).
+<span class="fn">action</span>(<span class="st">ask_clarification</span>) <span class="op">:-</span> <span class="fn">no_behavior</span>.
+
+<span class="cm">% SAFETY: cannot discuss unapproved topics</span>
+<span class="op">:-</span> <span class="fn">discusses</span>(<span class="var">T</span>), <span class="op">not</span> <span class="fn">topic</span>(<span class="var">T</span>).
+
+<span class="kw">#show</span> <span class="fn">suggest</span>/<span class="num">1</span>.
+<span class="kw">#show</span> <span class="fn">action</span>/<span class="num">1</span>.
+<span class="kw">#show</span> <span class="fn">relevant</span>/<span class="num">1</span>.</code></pre>
+    </div>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: Exercises &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 10: EXERCISES -->
+<!-- ============================================ -->
+<section id="ch10">
+  <h2><span class="ch-num">10.</span> Practice Exercises</h2>
+  <p class="ch-subtitle">Hands-on problems to solidify your understanding.</p>
+
+  <div class="exercise">
+    <div class="exercise-header">
+      <span class="exercise-badge">Exercise 1</span>
+      <span class="exercise-title">Trace answer set computation</span>
+    </div>
+    <p>Compute ALL answer sets for this program by hand:</p>
+    <pre><code><span class="fn">a</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">b</span>.
+<span class="fn">b</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">a</span>.
+<span class="fn">c</span> <span class="op">:-</span> <span class="fn">a</span>.
+<span class="fn">d</span> <span class="op">:-</span> <span class="fn">b</span>, <span class="op">not</span> <span class="fn">e</span>.
+<span class="fn">e</span> <span class="op">:-</span> <span class="fn">b</span>, <span class="op">not</span> <span class="fn">d</span>.</code></pre>
+    <button class="solution-toggle">Show Solution</button>
+    <div class="solution">
+      <p><strong>Answer Set 1:</strong> <code>{a, c}</code></p>
+      <ul>
+        <li>a is true (because not b holds &mdash; b has no support)</li>
+        <li>c is true (because a is true)</li>
+        <li>b is false (not a fails since a is true)</li>
+        <li>d and e don't fire (they need b)</li>
+      </ul>
+      <p><strong>Answer Set 2:</strong> <code>{b, d}</code></p>
+      <ul>
+        <li>b is true (because not a holds &mdash; a has no support here)</li>
+        <li>d is true (b is true and not e holds)</li>
+        <li>e is false (not d fails since d is true)</li>
+      </ul>
+      <p><strong>Answer Set 3:</strong> <code>{b, e}</code></p>
+      <ul>
+        <li>b is true (because not a holds)</li>
+        <li>e is true (b is true and not d holds)</li>
+        <li>d is false (not e fails since e is true)</li>
+      </ul>
+      <p>Three answer sets total. Notice how the choice between d and e mirrors the choice between a and b &mdash; both are cases where two rules depend on each other's negation.</p>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="exercise-header">
+      <span class="exercise-badge">Exercise 2</span>
+      <span class="exercise-title">Write integrity constraints</span>
+    </div>
+    <p>Write ASP constraints that enforce these rules for a coaching chatbot:</p>
+    <ol>
+      <li>Never discuss more than 2 topics in one session</li>
+      <li>If the child is under 5, only recommend "simple" strategies</li>
+      <li>Cannot recommend a strategy and its opposite simultaneously</li>
+      <li>Every response in strategy phase must include at least one actionable step</li>
+    </ol>
+    <button class="solution-toggle">Show Solution</button>
+    <div class="solution">
+      <pre><code><span class="cm">% 1. Max 2 topics per session</span>
+<span class="fn">topic_count</span>(<span class="var">N</span>) <span class="op">:-</span> <span class="var">N</span> = <span class="kw">#count</span>{ <span class="var">T</span> : <span class="fn">active_topic</span>(<span class="var">T</span>) }.
+<span class="op">:-</span> <span class="fn">topic_count</span>(<span class="var">N</span>), <span class="var">N</span> <span class="op">&gt;</span> <span class="num">2</span>.
+
+<span class="cm">% 2. Under-5: only simple strategies</span>
+<span class="fn">young_child</span>(<span class="var">C</span>) <span class="op">:-</span> <span class="fn">child_age</span>(<span class="var">C</span>, <span class="var">A</span>), <span class="var">A</span> <span class="op">&lt;</span> <span class="num">5</span>.
+<span class="op">:-</span> <span class="fn">recommend</span>(<span class="var">S</span>), <span class="fn">young_child</span>(<span class="var">_</span>), <span class="op">not</span> <span class="fn">simple_strategy</span>(<span class="var">S</span>).
+<span class="fn">simple_strategy</span>(<span class="st">visual_schedule</span>).
+<span class="fn">simple_strategy</span>(<span class="st">first_then</span>).
+<span class="fn">simple_strategy</span>(<span class="st">countdown</span>).
+
+<span class="cm">% 3. Cannot recommend opposites</span>
+<span class="fn">opposite</span>(<span class="st">strict_schedule</span>, <span class="st">flexible_approach</span>).
+<span class="fn">opposite</span>(<span class="var">A</span>, <span class="var">B</span>) <span class="op">:-</span> <span class="fn">opposite</span>(<span class="var">B</span>, <span class="var">A</span>). <span class="cm">% symmetric</span>
+<span class="op">:-</span> <span class="fn">recommend</span>(<span class="var">A</span>), <span class="fn">recommend</span>(<span class="var">B</span>), <span class="fn">opposite</span>(<span class="var">A</span>, <span class="var">B</span>).
+
+<span class="cm">% 4. Strategy phase needs action steps</span>
+<span class="op">:-</span> <span class="fn">current_phase</span>(<span class="st">strategy</span>), <span class="op">not</span> <span class="fn">has_action_step</span>.
+<span class="fn">has_action_step</span> <span class="op">:-</span> <span class="fn">action_step</span>(<span class="var">_</span>).</code></pre>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="exercise-header">
+      <span class="exercise-badge">Exercise 3</span>
+      <span class="exercise-title">Design a predicate vocabulary</span>
+    </div>
+    <p>Design the predicate vocabulary for a chatbot that coaches parents on <strong>bedtime routines</strong>. Include predicates for: the child's current bedtime behavior, the family's schedule constraints, tried strategies, emotional state, and environmental factors. Write the LLM system prompt that constrains extraction to this vocabulary.</p>
+    <button class="solution-toggle">Show Solution</button>
+    <div class="solution">
+      <pre><code><span class="cm">% Predicate vocabulary for bedtime coaching</span>
+
+<span class="cm">% Child behavior</span>
+<span class="fn">bedtime_behavior</span>(<span class="var">Child</span>, <span class="var">Behavior</span>).
+<span class="cm">%   Behaviors: resists_bed, stalls, gets_up_repeatedly,</span>
+<span class="cm">%   cant_fall_asleep, night_waking, early_waking</span>
+
+<span class="cm">% Schedule</span>
+<span class="fn">target_bedtime</span>(<span class="var">Child</span>, <span class="var">Time</span>).
+<span class="fn">actual_bedtime</span>(<span class="var">Child</span>, <span class="var">Time</span>).
+<span class="fn">wake_time</span>(<span class="var">Child</span>, <span class="var">Time</span>).
+<span class="fn">has_school_next_day</span>(<span class="var">Child</span>).
+
+<span class="cm">% Strategies tried</span>
+<span class="fn">tried</span>(<span class="var">Parent</span>, <span class="var">Strategy</span>).
+<span class="fn">outcome</span>(<span class="var">Strategy</span>, <span class="var">Result</span>). <span class="cm">% positive | negative | neutral</span>
+
+<span class="cm">% Emotional state</span>
+<span class="fn">child_emotion_at_bedtime</span>(<span class="var">Child</span>, <span class="var">Emotion</span>).
+<span class="cm">%   Emotions: anxious, hyper, calm, tired, angry</span>
+<span class="fn">parent_emotion</span>(<span class="var">Parent</span>, <span class="var">Emotion</span>).
+
+<span class="cm">% Environment</span>
+<span class="fn">screen_before_bed</span>(<span class="var">Child</span>).
+<span class="fn">shares_room</span>(<span class="var">Child</span>).
+<span class="fn">has_nightlight</span>(<span class="var">Child</span>).
+<span class="fn">noise_level</span>(<span class="var">Level</span>). <span class="cm">% quiet | moderate | noisy</span></code></pre>
+
+      <pre><code><span class="cm">LLM System Prompt:</span>
+<span class="st">"You are a semantic parser for a bedtime coaching chatbot.
+Convert the parent's message into ONLY these predicates:
+
+- bedtime_behavior(ChildName, Behavior)
+  Behavior: resists_bed | stalls | gets_up_repeatedly |
+            cant_fall_asleep | night_waking | early_waking
+- target_bedtime(ChildName, Time)
+- actual_bedtime(ChildName, Time)
+- wake_time(ChildName, Time)
+- has_school_next_day(ChildName)
+- tried(ParentName, Strategy)
+- outcome(Strategy, positive | negative | neutral)
+- child_emotion_at_bedtime(ChildName, Emotion)
+  Emotion: anxious | hyper | calm | tired | angry
+- parent_emotion(ParentName, Emotion)
+  Emotion: frustrated | exhausted | hopeful | overwhelmed
+- screen_before_bed(ChildName)
+- shares_room(ChildName)
+- has_nightlight(ChildName)
+- noise_level(quiet | moderate | noisy)
+
+Rules:
+- Output ONLY valid predicates from the list above
+- One predicate per line
+- Use lowercase for names
+- If information is ambiguous, extract what's clear
+- Do NOT infer or assume what wasn't stated"</span></code></pre>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="exercise-header">
+      <span class="exercise-badge">Exercise 4</span>
+      <span class="exercise-title">Full pipeline trace</span>
+    </div>
+    <p>Trace the complete STAR pipeline for this input:<br>
+    <em>"My daughter Emma is 6. She has terrible meltdowns every time we try to leave the house. We've tried counting down from 10 but she just screams louder. I'm so exhausted."</em></p>
+    <p>Show: (1) extracted predicates, (2) ASP reasoning with rules, (3) response predicates, (4) sketch of natural language output.</p>
+    <button class="solution-toggle">Show Solution</button>
+    <div class="solution">
+      <p><strong>Layer 1: Predicate Extraction (LLM)</strong></p>
+      <pre><code><span class="fn">child</span>(<span class="st">user</span>, <span class="st">emma</span>).
+<span class="fn">child_age</span>(<span class="st">emma</span>, <span class="num">6</span>).
+<span class="fn">challenge</span>(<span class="st">emma</span>, <span class="st">transitions</span>).
+<span class="fn">behavior</span>(<span class="st">meltdown</span>).
+<span class="fn">context</span>(<span class="st">leaving_house</span>).
+<span class="fn">tried</span>(<span class="st">user</span>, <span class="st">countdown</span>).
+<span class="fn">outcome</span>(<span class="st">countdown</span>, <span class="st">negative</span>).
+<span class="fn">parent_emotion</span>(<span class="st">user</span>, <span class="st">exhausted</span>).</code></pre>
+
+      <p><strong>Layer 2: ASP Reasoning</strong></p>
+      <pre><code><span class="cm">% Intake check: have age, challenge, behavior --> intake_done</span>
+<span class="fn">intake_done</span>.
+<span class="fn">current_phase</span>(<span class="st">strategy</span>).
+
+<span class="cm">% Topic mapping</span>
+<span class="fn">relevant_topic</span>(<span class="st">transitions</span>). <span class="cm">% from challenge</span>
+<span class="fn">relevant_topic</span>(<span class="st">emotional_regulation</span>). <span class="cm">% from behavior(meltdown)</span>
+
+<span class="cm">% Strategy matching</span>
+<span class="fn">applicable</span>(<span class="st">countdown</span>). <span class="cm">% for transitions</span>
+<span class="fn">applicable</span>(<span class="st">transition_object</span>). <span class="cm">% for transitions</span>
+<span class="fn">applicable</span>(<span class="st">calm_corner</span>). <span class="cm">% for emotional_regulation</span>
+<span class="fn">applicable</span>(<span class="st">emotion_naming</span>). <span class="cm">% for emotional_regulation</span>
+
+<span class="cm">% Blocking</span>
+<span class="fn">blocked</span>(<span class="st">countdown</span>). <span class="cm">% tried, negative outcome</span>
+
+<span class="cm">% Final recommendations</span>
+<span class="fn">recommend</span>(<span class="st">transition_object</span>).
+<span class="fn">recommend</span>(<span class="st">calm_corner</span>).
+<span class="fn">recommend</span>(<span class="st">emotion_naming</span>).
+
+<span class="cm">% Meta</span>
+<span class="fn">acknowledge</span>(<span class="st">exhaustion</span>). <span class="cm">% parent_emotion detected</span>
+<span class="fn">safe_response</span>(<span class="st">true</span>). <span class="cm">% no crisis indicators</span></code></pre>
+
+      <p><strong>Layer 3: Response Generation (LLM)</strong></p>
+      <p><em>"I hear you &mdash; dealing with meltdowns when you're trying to get out the door is incredibly draining, and it makes sense that you're feeling exhausted.</em></p>
+      <p><em>Since the countdown approach hasn't been working for Emma, here are a couple of things that might help with leaving-the-house transitions:</em></p>
+      <p><em>A <strong>Transition Object</strong> &mdash; let Emma pick a small comfort item she can bring along. Having something familiar can ease the shift from 'home' to 'outside.'</em></p>
+      <p><em>Before transitions, try <strong>Emotion Naming</strong> &mdash; help Emma identify what she's feeling ('It looks like you're feeling worried about leaving'). This helps kids feel understood and can reduce the intensity of meltdowns.</em></p>
+      <p><em>You might also set up a <strong>Calm-Down Corner</strong> at home where Emma can go when she feels overwhelmed, which she can use before you need to head out."</em></p>
+    </div>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: Interview Prep &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 11: INTERVIEW PREP -->
+<!-- ============================================ -->
+<section id="ch11">
+  <h2><span class="ch-num">11.</span> Interview Prep</h2>
+  <p class="ch-subtitle">Key concepts, expected questions, and how to talk about this architecture.</p>
+
+  <h3>Concepts You Must Be Able to Explain</h3>
+
+  <h4>1. "Why use ASP instead of just prompt engineering the LLM?"</h4>
+  <div class="callout key">
+    <div class="callout-title">Your Answer Framework</div>
+    <p>Prompt engineering provides <em>suggestions</em> to the LLM. ASP provides <em>mathematical guarantees</em>. When you write <code>:- recommend(X), medication(X).</code>, the system literally cannot produce a medication recommendation. No jailbreak, no prompt injection, no edge case can override it. For a healthcare product, especially one targeting children with ADHD, you need guarantees, not suggestions. Additionally, ASP gives you justification trees for regulatory compliance, declarative rule updates when clinical guidelines change, and consistent behavior that doesn't drift with model updates.</p>
+  </div>
+
+  <h4>2. "How does predicate extraction work?"</h4>
+  <p>The LLM is given a constrained vocabulary of predicates (defined by the domain). It acts as a structured information extractor, mapping natural language to these predicates. The vocabulary maps directly to the ASP program's expected inputs. The LLM cannot invent new predicates &mdash; only extract from the approved set. Multi-stage extraction (LLM extracts, ASP validates) improves accuracy from ~74% to ~81% F1.</p>
+
+  <h4>3. "What is s(CASP) and how does it differ from regular ASP?"</h4>
+  <p>s(CASP) is a goal-directed ASP implementation by Dr. Gopal Gupta. Unlike Clingo (bottom-up, requires grounding), s(CASP) works top-down like Prolog but with stable model semantics. Key advantages: no grounding (handles infinite domains), retains variables, produces justification trees (explainability), and runs in ~8ms per query. It gives you ASP's logical guarantees with Prolog's execution efficiency.</p>
+
+  <h4>4. "How do clinician-defined bounds work technically?"</h4>
+  <p>Clinicians define rules and constraints in ASP:</p>
+  <ul>
+    <li><strong>Approved topics:</strong> Facts like <code>approved_topic(behavioral_strategies).</code></li>
+    <li><strong>Safety constraints:</strong> Rules like <code>:- discusses(T), not approved_topic(T).</code></li>
+    <li><strong>Strategy mappings:</strong> Rules connecting challenges to evidence-based strategies</li>
+    <li><strong>Conversation flow:</strong> CKTs (Conversational Knowledge Templates) defining what to ask and when</li>
+  </ul>
+  <p>When guidelines change, clinicians update the ASP rules. No model retraining needed.</p>
+
+  <h4>5. "How do you prevent LLM hallucination?"</h4>
+  <p>The LLM never makes decisions. It's a translator (NL &rarr; predicates, predicates &rarr; NL). All reasoning happens in ASP, which is deterministic and formally verifiable. Even if the LLM extracts incorrect predicates, the ASP constraints catch unsafe combinations. The system has multiple defense layers: constrained extraction vocabulary, ASP validation, integrity constraints, and justification trees for audit.</p>
+
+  <h3>Technical Questions to Practice</h3>
+  <ol>
+    <li>Write an ASP program that models a 4-phase conversation with transition rules</li>
+    <li>Explain the difference between NAF (<code>not</code>) and classical negation (<code>-</code>) with examples</li>
+    <li>Design a predicate vocabulary for a new coaching domain</li>
+    <li>Trace a justification tree for a given recommendation</li>
+    <li>How would you add a new strategy to the system? (Answer: add facts, no retraining)</li>
+    <li>What happens if the LLM extracts a predicate not in the vocabulary? (Answer: ASP ignores unknown predicates; CKT asks for clarification)</li>
+    <li>How does the system handle contradictory input? (Answer: integrity constraints eliminate inconsistent models)</li>
+  </ol>
+
+  <h3>Behavioral Questions</h3>
+
+  <h4>"Tell me about your experience with RAG systems"</h4>
+  <p>Talk about the voice-to-voice RAG at eXRealityAI: BM25 + FAISS hybrid retrieval, Mistral-7B with quantization, sub-10s latency on Jetson. Connect to how RAG could augment the ASP system with vetted clinical knowledge retrieval.</p>
+
+  <h4>"Tell me about building agentic systems"</h4>
+  <p>Talk about Suspect Detection: LangGraph supervisor pattern, multiple specialized agents, structured outputs. Connect to how the STAR framework uses a similar multi-agent approach (AutoManager uses multiple agents with a shared ASP knowledge base).</p>
+
+  <h4>"How do you handle working with clinical constraints you're not an expert in?"</h4>
+  <p>Emphasize: the beauty of ASP is separation of concerns. Clinicians define the rules (domain knowledge). Engineers build the pipeline (extraction, reasoning, generation). You don't need to be a clinician to implement the technical system &mdash; you need to build the infrastructure that lets clinicians express their knowledge declaratively.</p>
+
+  <h3>Questions to Ask Them</h3>
+  <ol>
+    <li>How does the current ASP conversation architecture work in practice? Is it s(CASP) or Clingo-based?</li>
+    <li>What does the predicate extraction pipeline look like today? What accuracy are you achieving?</li>
+    <li>How do clinicians define and update the conversation bounds?</li>
+    <li>What's the current tech stack? (mobile framework, backend, database)</li>
+    <li>How is the chatbot evaluated for clinical safety and effectiveness?</li>
+    <li>What does the Phase II SBIR roadmap look like?</li>
+    <li>How does the team collaborate between clinical and engineering?</li>
+  </ol>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: Reference &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- REFERENCE & GLOSSARY -->
+<!-- ============================================ -->
+<section id="ref">
+  <h2>Reference &amp; Glossary</h2>
+  <p class="ch-subtitle">Quick-reference for key terms, syntax, and resources.</p>
+
+  <h3>Glossary</h3>
+  <table>
+    <tr><th>Term</th><th>Definition</th></tr>
+    <tr><td><strong>Answer Set</strong></td><td>A consistent, minimal set of ground atoms satisfying all rules and constraints. A "possible world."</td></tr>
+    <tr><td><strong>Stable Model</strong></td><td>Same as answer set. The terms are interchangeable.</td></tr>
+    <tr><td><strong>Predicate</strong></td><td>A named relation: <code>parent(tom, bob)</code>. Notation: <code>name/arity</code>.</td></tr>
+    <tr><td><strong>Ground</strong></td><td>A term with no variables. <code>parent(tom, bob)</code> is ground; <code>parent(X, bob)</code> is not.</td></tr>
+    <tr><td><strong>Unification</strong></td><td>Finding variable bindings to make two terms identical. Core computation in Prolog.</td></tr>
+    <tr><td><strong>NAF</strong></td><td>Negation as Failure. <code>not p</code> = "cannot prove p." Closed World Assumption.</td></tr>
+    <tr><td><strong>Classical Negation</strong></td><td><code>-p</code> = "p is explicitly false." Stronger than NAF.</td></tr>
+    <tr><td><strong>Integrity Constraint</strong></td><td><code>:- body.</code> Eliminates answer sets where body is true. Your guardrails.</td></tr>
+    <tr><td><strong>Choice Rule</strong></td><td><code>{a ; b} = 1.</code> Nondeterministic choice. Generates multiple answer sets.</td></tr>
+    <tr><td><strong>CWA</strong></td><td>Closed World Assumption. If not stated/derivable, it's false.</td></tr>
+    <tr><td><strong>s(CASP)</strong></td><td>Goal-directed ASP by Gopal Gupta. Top-down + stable model semantics.</td></tr>
+    <tr><td><strong>Clingo</strong></td><td>Most popular ASP solver. Bottom-up, SAT-based. From the Potassco project.</td></tr>
+    <tr><td><strong>CKT</strong></td><td>Conversational Knowledge Template. ASP state machine for dialog management.</td></tr>
+    <tr><td><strong>STAR</strong></td><td>Semantic-parsing Transformer + ASP Reasoner. The LLM+ASP framework.</td></tr>
+    <tr><td><strong>Justification Tree</strong></td><td>s(CASP)'s explanation of why a conclusion holds. Human-readable proof trace.</td></tr>
+    <tr><td><strong>Grounding</strong></td><td>Replacing variables with all possible concrete values. Required by Clingo, not s(CASP).</td></tr>
+    <tr><td><strong>SLD Resolution</strong></td><td>Prolog's execution method: top-down, depth-first, with backtracking.</td></tr>
+  </table>
+
+  <h3>Syntax Quick Reference</h3>
+  <table>
+    <tr><th>Construct</th><th>Syntax</th><th>Example</th></tr>
+    <tr><td>Fact</td><td><code>pred(args).</code></td><td><code>parent(tom, bob).</code></td></tr>
+    <tr><td>Rule</td><td><code>head :- body.</code></td><td><code>grandparent(X,Z) :- parent(X,Y), parent(Y,Z).</code></td></tr>
+    <tr><td>Constraint</td><td><code>:- body.</code></td><td><code>:- recommend(X), medication(X).</code></td></tr>
+    <tr><td>Choice</td><td><code>L {atoms} U.</code></td><td><code>1 {color(X,C) : color(C)} 1 :- node(X).</code></td></tr>
+    <tr><td>NAF</td><td><code>not pred</code></td><td><code>safe(X) :- not dangerous(X).</code></td></tr>
+    <tr><td>Strong neg.</td><td><code>-pred</code></td><td><code>-flies(penguin).</code></td></tr>
+    <tr><td>Show</td><td><code>#show pred/n.</code></td><td><code>#show recommend/1.</code></td></tr>
+    <tr><td>Optimize</td><td><code>#minimize{...}.</code></td><td><code>#minimize{1,S : suggest(S)}.</code></td></tr>
+    <tr><td>Variable</td><td>Uppercase</td><td><code>X</code>, <code>Person</code>, <code>Who</code></td></tr>
+    <tr><td>Constant</td><td>Lowercase</td><td><code>tom</code>, <code>adhd</code>, <code>homework</code></td></tr>
+    <tr><td>Anonymous</td><td><code>_</code></td><td><code>parent(_, bob)</code></td></tr>
+    <tr><td>Comment</td><td><code>%</code></td><td><code>% this is a comment</code></td></tr>
+  </table>
+
+  <h3>Key Papers (Reading Order)</h3>
+  <ol>
+    <li><strong>STAR Framework (2023)</strong> &mdash; The original LLM+ASP blueprint<br><a href="https://arxiv.org/abs/2302.03780" target="_blank">arxiv.org/abs/2302.03780</a></li>
+    <li><strong>AutoConcierge (2024)</strong> &mdash; First domain-specific chatbot demo<br><a href="https://arxiv.org/abs/2303.08941" target="_blank">arxiv.org/abs/2303.08941</a></li>
+    <li><strong>AutoCompanion (2024)</strong> &mdash; Extended with topic control<br><a href="https://arxiv.org/abs/2407.18498" target="_blank">arxiv.org/abs/2407.18498</a></li>
+    <li><strong>AutoManager (2025)</strong> &mdash; Multi-agent version, latest architecture<br><a href="https://arxiv.org/abs/2505.06438" target="_blank">arxiv.org/abs/2505.06438</a></li>
+    <li><strong>Trustworthy AI (2025)</strong> &mdash; How s(CASP) meets all 16+2 desiderata<br><a href="https://arxiv.org/abs/2506.12667" target="_blank">arxiv.org/abs/2506.12667</a></li>
+  </ol>
+
+  <h3>Tools &amp; Resources</h3>
+  <table>
+    <tr><th>Resource</th><th>Link</th></tr>
+    <tr><td>s(CASP) in SWI-Prolog</td><td><a href="https://github.com/JanWielemaker/sCASP" target="_blank">github.com/JanWielemaker/sCASP</a></td></tr>
+    <tr><td>s(CASP) Online Playground</td><td><a href="https://swish.swi-prolog.org/example/scasp.swinb" target="_blank">swish.swi-prolog.org</a></td></tr>
+    <tr><td>Clingo (Potassco)</td><td><a href="https://potassco.org/clingo/" target="_blank">potassco.org/clingo</a></td></tr>
+    <tr><td>s(CASP) Manual (PDF)</td><td><a href="https://personal.utdallas.edu/~gupta/nfm-ex/scasp-manual.pdf" target="_blank">UTD s(CASP) Manual</a></td></tr>
+    <tr><td>s(CASP) Windows Install</td><td><a href="https://personal.utdallas.edu/~gupta/scasp-ex/swi.scasp.install.pdf" target="_blank">UTD Install Guide</a></td></tr>
+    <tr><td>Gopal Gupta's Lab</td><td><a href="https://personal.utdallas.edu/~gupta/" target="_blank">personal.utdallas.edu/~gupta</a></td></tr>
+    <tr><td>Ciao s(CASP) Playground</td><td><a href="https://ciao-lang.org/playground/scasp.html" target="_blank">ciao-lang.org playground</a></td></tr>
+  </table>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn disabled nav-next">End of Course</span>
+  </div>
+</section>
 
 </main>
 

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(ls:*)",
-      "Bash(git -C \"C:\\\\Personal\\\\Factory\\\\FirstThen\\\\LearnLogicProgramming\" status --short)"
+      "Bash(git -C \"C:\\\\Personal\\\\Factory\\\\FirstThen\\\\LearnLogicProgramming\" status --short)",
+      "Bash(powershell -ExecutionPolicy Bypass -File assemble_efgh.ps1:*)"
     ]
   }
 }

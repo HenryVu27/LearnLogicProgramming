@@ -1394,11 +1394,11 @@ Keep it to 2-3 paragraphs."</span></code></pre>
 <!-- ============================================ -->
 <section id="ch10">
   <h2><span class="ch-num">10.</span> Practice Exercises</h2>
-  <p class="ch-subtitle">55 problems organized by topic. Work through them in order or jump to your weak areas.</p>
+  <p class="ch-subtitle">94 problems organized by topic. Work through them in order or jump to your weak areas.</p>
 
   <div class="callout key">
     <div class="callout-title">How to Use This Problem Set</div>
-    <p><strong>Section A</strong> (Prolog) builds foundation. <strong>Section B</strong> (ASP basics) is the core. <strong>Section C</strong> (ASP intermediate + s(CASP)) goes deeper. <strong>Section D</strong> (STAR framework &amp; applications) is the most interview-relevant &mdash; prioritize it if short on time.</p>
+    <p><strong>Sections A&ndash;D</strong> cover logic programming (Prolog, ASP, s(CASP), STAR framework). <strong>Section E</strong> (RAG &amp; LLM) and <strong>Section F</strong> (Agentic Protocols) are Python-based and highly interview-relevant. <strong>Sections G&ndash;H</strong> (APIs &amp; Databases) are conceptual/easy for baseline competency.</p>
   </div>
 
   <h3>Section A: Prolog Foundations (A1&ndash;A13)</h3>
@@ -3572,6 +3572,1678 @@ has_candidate :- candidate(_).
     This is the AutoConcierge pattern from Gopal Gupta's research group. The ASP program encodes domain expertise declaratively, the LLM extracts user intent into predicates, the solver finds valid recommendations, and integrity constraints ensure safety. Swap restaurant facts for ADHD strategies and allergen checks for clinical safety constraints, and you have the FirstThen architecture.</p>
   </div>
 </div>
+
+  <h3>Section E: RAG &amp; LLM (E1&ndash;E17)</h3>
+  <div class="callout key">
+    <div class="callout-title">Priority: HIGH</div>
+    <p>Core to the role. The STAR framework relies on LLMs for predicate extraction and response generation, and RAG for grounding in vetted clinical sources. Problems are in <strong>Python</strong>.</p>
+  </div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E1</span>
+    <span class="exercise-title">Cosine Similarity</span>
+  </div>
+  <p>Given two embedding vectors, compute their cosine similarity from scratch (no ML libraries). This is the foundation of every vector search in a RAG system.</p>
+  <pre><code class="language-python">def cosine_similarity(vec_a: list[float], vec_b: list[float]) -&gt; float:
+    """
+    Compute cosine similarity between two vectors.
+    Return a float between -1 and 1.
+    Raise ValueError if vectors have different lengths or are zero vectors.
+    """
+    pass
+
+# Test Cases:
+assert abs(cosine_similarity([1, 0, 0], [1, 0, 0]) - 1.0) &lt; 1e-6
+assert abs(cosine_similarity([1, 0, 0], [0, 1, 0]) - 0.0) &lt; 1e-6
+assert abs(cosine_similarity([1, 1], [1, -1]) - 0.0) &lt; 1e-6
+assert abs(cosine_similarity([3, 4], [6, 8]) - 1.0) &lt; 1e-6
+assert abs(cosine_similarity([1, 2, 3], [-1, -2, -3]) - (-1.0)) &lt; 1e-6</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">import math
+
+def cosine_similarity(vec_a: list[float], vec_b: list[float]) -&gt; float:
+    if len(vec_a) != len(vec_b):
+        raise ValueError("Vectors must have the same length")
+
+    dot = sum(a * b for a, b in zip(vec_a, vec_b))
+    mag_a = math.sqrt(sum(a * a for a in vec_a))
+    mag_b = math.sqrt(sum(b * b for b in vec_b))
+
+    if mag_a == 0 or mag_b == 0:
+        raise ValueError("Zero vector has no direction")
+
+    return dot / (mag_a * mag_b)</code></pre>
+    <p>Cosine similarity = dot(A, B) / (||A|| * ||B||). It measures the angle between two vectors, not their magnitude. Identical directions = 1, orthogonal = 0, opposite = -1. This is what FAISS computes millions of times per query in FirstThen&rsquo;s retrieval layer.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E2</span>
+    <span class="exercise-title">Text Chunking with Overlap</span>
+  </div>
+  <p>Implement a text chunker that splits a document into overlapping chunks for embedding. This is the first step in any RAG ingestion pipeline.</p>
+  <pre><code class="language-python">def chunk_text(text: str, chunk_size: int, overlap: int) -&gt; list[str]:
+    """
+    Split text into chunks of approximately chunk_size characters
+    with overlap characters between consecutive chunks.
+
+    Rules:
+    - Split on sentence boundaries ('. ') when possible
+    - If no sentence boundary within chunk_size, split at chunk_size
+    - overlap defines how many characters from end of chunk[i]
+      appear at start of chunk[i+1]
+    - Return list of chunk strings
+    """
+    pass
+
+# Test Cases:
+text = "Sentence one. Sentence two. Sentence three. Sentence four."
+chunks = chunk_text(text, 40, 15)
+assert len(chunks) &gt;= 2
+# Verify overlap exists between consecutive chunks
+for i in range(len(chunks) - 1):
+    end_of_prev = chunks[i][-10:]
+    assert end_of_prev in chunks[i + 1] or chunks[i + 1][:15] in chunks[i]</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def chunk_text(text: str, chunk_size: int, overlap: int) -&gt; list[str]:
+    sentences = text.split('. ')
+    sentences = [s + '.' if not s.endswith('.') else s for s in sentences if s.strip()]
+
+    chunks = []
+    current = ""
+    for sent in sentences:
+        if len(current) + len(sent) + 1 &gt; chunk_size and current:
+            chunks.append(current.strip())
+            # Backtrack by overlap characters
+            current = current[-overlap:].strip() + " " + sent if overlap &gt; 0 else sent
+        else:
+            current = (current + " " + sent).strip() if current else sent
+
+    if current.strip():
+        chunks.append(current.strip())
+    return chunks</code></pre>
+    <p>Chunking strategy directly affects retrieval quality. Too large = diluted embeddings. Too small = lost context. Overlap ensures sentences at chunk boundaries aren&rsquo;t orphaned. FirstThen&rsquo;s clinical knowledge base (ADHD strategies, parenting guides) needs careful chunking so each chunk is a coherent unit of advice.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E3</span>
+    <span class="exercise-title">BM25 Scoring</span>
+  </div>
+  <p>Implement BM25 scoring for keyword-based retrieval. FirstThen uses hybrid retrieval (BM25 + FAISS vector search).</p>
+  <pre><code class="language-python">import math
+
+def bm25_score(query_terms: list[str], document: list[str],
+               corpus: list[list[str]], k1: float = 1.5, b: float = 0.75) -&gt; float:
+    """
+    Compute BM25 score for a single document given a query.
+
+    IDF(term) = log((N - n(term) + 0.5) / (n(term) + 0.5) + 1)
+    score = sum over query terms of:
+      IDF(term) * (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * doc_len/avg_dl))
+
+    where N = total docs, n(term) = docs containing term,
+    tf = term frequency in document, doc_len = len(document),
+    avg_dl = average doc length in corpus
+    """
+    pass
+
+# Test Cases:
+corpus = [
+    ["adhd", "child", "strategies", "visual", "schedules"],
+    ["medication", "dosage", "adhd", "treatment"],
+    ["parent", "coaching", "behavioral", "strategies"],
+    ["adhd", "adhd", "diagnosis", "criteria", "dsm"],
+]
+assert bm25_score(["adhd", "strategies"], corpus[0], corpus) &gt; 0
+assert bm25_score(["xyz"], corpus[0], corpus) == 0
+# corpus[3] has "adhd" twice, should score higher for that term
+assert bm25_score(["adhd"], corpus[3], corpus) &gt; bm25_score(["adhd"], corpus[0], corpus)</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">import math
+
+def bm25_score(query_terms, document, corpus, k1=1.5, b=0.75):
+    N = len(corpus)
+    avg_dl = sum(len(d) for d in corpus) / N
+    doc_len = len(document)
+    score = 0.0
+
+    for term in query_terms:
+        tf = document.count(term)
+        if tf == 0:
+            continue
+        n_term = sum(1 for d in corpus if term in d)
+        idf = math.log((N - n_term + 0.5) / (n_term + 0.5) + 1)
+        numerator = tf * (k1 + 1)
+        denominator = tf + k1 * (1 - b + b * (doc_len / avg_dl))
+        score += idf * numerator / denominator
+
+    return score</code></pre>
+    <p>BM25 is the keyword half of hybrid retrieval. It excels at exact lexical matching &mdash; a query for &ldquo;DSM-5 ADHD criteria&rdquo; finds documents with those exact tokens, which dense embeddings might miss. The k1 parameter controls term frequency saturation (higher = more credit for repeated terms), and b controls length normalization (higher = more penalty for long documents).</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E4</span>
+    <span class="exercise-title">Reciprocal Rank Fusion</span>
+  </div>
+  <p>Given results from two retrieval systems (BM25 and vector search), combine them using Reciprocal Rank Fusion (RRF). This is how hybrid retrieval merges ranked lists.</p>
+  <pre><code class="language-python">def reciprocal_rank_fusion(
+    ranked_lists: list[list[str]], k: int = 60
+) -&gt; list[str]:
+    """
+    Combine multiple ranked lists using RRF.
+    RRF_score(doc) = sum over all lists of: 1 / (k + rank)
+    where rank is 1-indexed. Return doc IDs sorted by RRF score descending.
+    """
+    pass
+
+# Test Cases:
+bm25 = ["doc_A", "doc_B", "doc_C", "doc_D"]
+vector = ["doc_C", "doc_A", "doc_E", "doc_B"]
+fused = reciprocal_rank_fusion([bm25, vector])
+assert fused[0] == "doc_A"  # rank 1 + rank 2 = best combined
+assert "doc_C" in fused[:3]
+assert len(fused) == 5       # union of all docs</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def reciprocal_rank_fusion(ranked_lists, k=60):
+    scores = {}
+    for rlist in ranked_lists:
+        for rank, doc_id in enumerate(rlist, start=1):
+            scores[doc_id] = scores.get(doc_id, 0) + 1.0 / (k + rank)
+    return sorted(scores, key=lambda d: scores[d], reverse=True)</code></pre>
+    <p>RRF is simple but remarkably effective. The constant k (typically 60) dampens the influence of high ranks, preventing any single system from dominating. A document ranked #1 by BM25 and #2 by vector search scores 1/61 + 1/62 &asymp; 0.0326, beating one ranked #1 by only one system (0.0164). This is exactly how FirstThen&rsquo;s hybrid retrieval combines BM25 keyword matching with FAISS semantic search.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E5</span>
+    <span class="exercise-title">Predicate Extraction Parser</span>
+  </div>
+  <p>Given an LLM&rsquo;s text output containing extracted predicates, parse them into structured Python objects. This is the bridge between the LLM layer and the ASP reasoning engine in the STAR framework.</p>
+  <pre><code class="language-python">def parse_predicates(llm_output: str) -&gt; list[dict]:
+    """
+    Parse LLM-generated predicate text into structured form.
+    Format (one per line): predicate_name(arg1, arg2, ...)
+
+    Args can be:
+      - atoms: lowercase words (e.g., adhd)
+      - strings: quoted text (e.g., "visual schedules")
+      - numbers: integers (e.g., 7)
+
+    Return: [{"name": str, "args": list[str | int]}]
+    Ignore blank lines and lines starting with '#'.
+    """
+    pass
+
+# Test Cases:
+output = """child_age(8)
+has_diagnosis(adhd)
+challenge("homework focus")
+parent_concern(mother, "screen time")
+# ignore this
+severity(moderate)
+"""
+result = parse_predicates(output)
+assert len(result) == 5
+assert result[0] == {"name": "child_age", "args": [8]}
+assert result[2] == {"name": "challenge", "args": ["homework focus"]}
+assert parse_predicates("") == []
+assert parse_predicates("fact()") == [{"name": "fact", "args": []}]</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">import re
+
+def parse_predicates(llm_output: str) -&gt; list[dict]:
+    results = []
+    for line in llm_output.strip().split('\n'):
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+
+        match = re.match(r'(\w+)\((.*)\)$', line)
+        if not match:
+            continue
+
+        name = match.group(1)
+        args_str = match.group(2).strip()
+
+        if not args_str:
+            results.append({"name": name, "args": []})
+            continue
+
+        # Parse args respecting quoted strings
+        args = []
+        for arg in re.findall(r'"[^"]*"|\S[^,]*', args_str):
+            arg = arg.strip().rstrip(',').strip()
+            if arg.startswith('"') and arg.endswith('"'):
+                args.append(arg[1:-1])
+            elif arg.lstrip('-').isdigit():
+                args.append(int(arg))
+            else:
+                args.append(arg)
+        results.append({"name": name, "args": args})
+
+    return results</code></pre>
+    <p>This is the <strong>literal core task</strong> of the role. The LLM outputs predicates in a semi-structured format; this parser converts them into dicts that can be validated and fed to the ASP solver. In production, you&rsquo;d add error recovery (partial parse attempts), logging for malformed output, and schema validation (see E16).</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E6</span>
+    <span class="exercise-title">Context Window Manager</span>
+  </div>
+  <p>Implement a context window manager that fits as many relevant retrieved chunks as possible into an LLM&rsquo;s context window, prioritized by relevance score.</p>
+  <pre><code class="language-python">def build_context(
+    chunks: list[dict],   # [{"text": str, "score": float, "source": str}]
+    max_tokens: int,
+    system_prompt_tokens: int,
+    reserve_output_tokens: int
+) -&gt; list[dict]:
+    """
+    Select chunks to fit within the LLM context window.
+    Available = max_tokens - system_prompt_tokens - reserve_output_tokens
+    Sort by score desc, estimate tokens as len(text) // 4,
+    greedily add until budget exhausted.
+    Return selected chunks in relevance order.
+    """
+    pass
+
+# Test Cases:
+chunks = [
+    {"text": "A" * 400, "score": 0.9, "source": "guide.pdf"},    # ~100 tokens
+    {"text": "B" * 800, "score": 0.7, "source": "faq.pdf"},       # ~200 tokens
+    {"text": "C" * 200, "score": 0.95, "source": "manual.pdf"},   # ~50 tokens
+    {"text": "D" * 1200, "score": 0.6, "source": "ref.pdf"},      # ~300 tokens
+]
+# Available: 1000 - 200 - 300 = 500 tokens
+selected = build_context(chunks, 1000, 200, 300)
+assert len(selected) == 3
+assert selected[0]["source"] == "manual.pdf"   # highest score
+assert selected[1]["source"] == "guide.pdf"
+assert build_context(chunks, 100, 50, 50) == []  # no room</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def build_context(chunks, max_tokens, system_prompt_tokens, reserve_output_tokens):
+    budget = max_tokens - system_prompt_tokens - reserve_output_tokens
+    if budget &lt;= 0:
+        return []
+
+    sorted_chunks = sorted(chunks, key=lambda c: c["score"], reverse=True)
+    selected = []
+    used = 0
+
+    for chunk in sorted_chunks:
+        est_tokens = len(chunk["text"]) // 4
+        if used + est_tokens &lt;= budget:
+            selected.append(chunk)
+            used += est_tokens
+
+    return selected</code></pre>
+    <p>Context window management is a critical RAG engineering skill. You always need to reserve space for the system prompt and expected output. Greedy by relevance is simple but effective &mdash; in practice you might also consider diversity (don&rsquo;t pick 3 chunks from the same document) or recency weighting. The 4 chars/token estimate is rough; production systems use the model&rsquo;s actual tokenizer (e.g., <code>tiktoken</code>).</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E7</span>
+    <span class="exercise-title">RAG Prompt Builder</span>
+  </div>
+  <p>Given retrieved chunks, a user query, ASP-derived predicates, and clinician rules, construct a constrained RAG prompt. This is the response generation layer of STAR &mdash; critical for healthcare safety.</p>
+  <pre><code class="language-python">def build_rag_prompt(
+    user_query: str,
+    context_chunks: list[dict],    # [{"text": str, "source": str}]
+    extracted_predicates: list[str],
+    system_rules: list[str]
+) -&gt; str:
+    """
+    Build a structured prompt with these sections in order:
+    1. System instruction (hardcoded - see below)
+    2. ## Rules (from system_rules)
+    3. ## Context (from chunks, with [Source: X] headers)
+    4. ## Current Session State (from predicates)
+    5. ## Parent Question (user_query)
+
+    System instruction:
+      "You are a parent coaching assistant for childhood ADHD.
+      ONLY use information from the provided context.
+      If the answer is not in the context, say 'I don't have
+      information about that.'
+      NEVER provide medical advice, medication recommendations,
+      or diagnoses."
+    """
+    pass
+
+# Test Cases:
+prompt = build_rag_prompt(
+    "How can I help with morning routines?",
+    [{"text": "Visual schedules help...", "source": "guide.pdf"}],
+    ["child_age(7)", "challenge(morning_routines)"],
+    ["Only suggest approved strategies", "Do not discuss medication"]
+)
+assert "ONLY use information from the provided context" in prompt
+assert "NEVER provide medical advice" in prompt
+assert "[Source: guide.pdf]" in prompt
+assert "child_age(7)" in prompt
+# Verify section ordering
+idx_sys = prompt.index("NEVER provide medical advice")
+idx_rules = prompt.index("## Rules")
+idx_ctx = prompt.index("## Context")
+idx_pred = prompt.index("## Current Session State")
+idx_q = prompt.index("## Parent Question")
+assert idx_sys &lt; idx_rules &lt; idx_ctx &lt; idx_pred &lt; idx_q</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def build_rag_prompt(user_query, context_chunks, extracted_predicates, system_rules):
+    sections = []
+
+    # 1. System instruction
+    sections.append(
+        "You are a parent coaching assistant for childhood ADHD.\n"
+        "ONLY use information from the provided context.\n"
+        "If the answer is not in the context, say "
+        "'I don't have information about that.'\n"
+        "NEVER provide medical advice, medication recommendations, or diagnoses."
+    )
+
+    # 2. Rules
+    rules_text = "\n".join(f"- {r}" for r in system_rules)
+    sections.append(f"## Rules\n{rules_text}")
+
+    # 3. Context
+    ctx_parts = []
+    for chunk in context_chunks:
+        ctx_parts.append(f"[Source: {chunk['source']}]\n{chunk['text']}")
+    sections.append("## Context\n" + "\n\n".join(ctx_parts))
+
+    # 4. Predicates
+    pred_text = "\n".join(f"- {p}" for p in extracted_predicates)
+    sections.append(f"## Current Session State\n{pred_text}")
+
+    # 5. Query
+    sections.append(f"## Parent Question\n{user_query}")
+
+    return "\n\n".join(sections)</code></pre>
+    <p>This prompt template enforces a strict contract: the LLM can ONLY use provided context, NEVER give medical advice, and always has visibility into the current session state from ASP. The section ordering matters &mdash; system instructions first anchors the LLM&rsquo;s behavior before it sees any content. Source attribution enables traceability, which is important for clinical trust.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E8</span>
+    <span class="exercise-title">Hallucination Detector</span>
+  </div>
+  <p>Given context chunks and an LLM response, detect claims NOT supported by the provided context. Critical safety mechanism for healthcare chatbots.</p>
+  <pre><code class="language-python">STOPWORDS = {"the", "a", "an", "is", "are", "was", "were", "be", "been",
+    "being", "have", "has", "had", "do", "does", "did", "will", "would",
+    "could", "should", "may", "might", "can", "shall", "to", "of", "in",
+    "for", "on", "with", "at", "by", "from", "it", "this", "that", "and",
+    "or", "but", "not", "no", "if", "then", "so", "as", "your", "you",
+    "i", "my", "we", "our", "they", "their", "he", "she"}
+
+def detect_unsupported_claims(
+    response_sentences: list[str],
+    context_chunks: list[str],
+    threshold: float = 0.3
+) -&gt; list[dict]:
+    """
+    For each response sentence, compute word overlap with each chunk:
+      overlap = |words_in_sentence &cap; words_in_chunk| / |words_in_sentence|
+    (lowercase, alpha-only words, ignoring stopwords)
+    Sentence is "supported" if max overlap &gt;= threshold.
+    Return [{"sentence": str, "best_overlap": float}] for unsupported only.
+    """
+    pass
+
+# Test Cases:
+context = [
+    "Visual schedules help children with ADHD maintain morning routines",
+    "Timers reduce transition anxiety for children aged 5 to 10",
+]
+response = [
+    "Visual schedules can help your child with morning routines.",  # supported
+    "Timers are effective for reducing transition anxiety.",         # supported
+    "Medication such as Adderall should be considered.",            # NOT supported
+    "Studies show 85% improvement rate with these techniques.",     # NOT supported
+]
+unsupported = detect_unsupported_claims(response, context)
+assert len(unsupported) == 2
+assert any("Adderall" in u["sentence"] for u in unsupported)
+assert any("85%" in u["sentence"] for u in unsupported)</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def detect_unsupported_claims(response_sentences, context_chunks, threshold=0.3):
+    def get_words(text):
+        return {w.lower() for w in text.split()
+                if w.isalpha() and w.lower() not in STOPWORDS}
+
+    chunk_words = [get_words(c) for c in context_chunks]
+    unsupported = []
+
+    for sent in response_sentences:
+        sent_words = get_words(sent)
+        if not sent_words:
+            continue
+        best = max(
+            (len(sent_words &amp; cw) / len(sent_words) for cw in chunk_words),
+            default=0
+        )
+        if best &lt; threshold:
+            unsupported.append({"sentence": sent, "best_overlap": best})
+
+    return unsupported</code></pre>
+    <p>This is a simple word-overlap heuristic &mdash; production systems use NLI (natural language inference) models like <code>cross-encoder/nli-deberta-v3-base</code> to check entailment. But even this simple version catches obvious hallucinations like medication claims and fabricated statistics. In FirstThen&rsquo;s healthcare context, ANY unsupported medical claim is dangerous. The ASP layer provides the first line of defense; this detector is the second.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>E9.</strong> In a RAG system, what is the primary purpose of the retrieval step?</p>
+  <button class="quiz-option" data-correct="false">A) To fine-tune the model on domain-specific data</button>
+  <button class="quiz-option" data-correct="true">B) To ground the LLM&rsquo;s response in relevant source documents, reducing hallucination</button>
+  <button class="quiz-option" data-correct="false">C) To reduce the size of the model for faster inference</button>
+  <button class="quiz-option" data-correct="false">D) To translate the user&rsquo;s query into a different language</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. RAG retrieves relevant documents and injects them into the prompt context, so the LLM generates responses grounded in actual source material rather than relying solely on parametric knowledge. This is especially critical in healthcare where accuracy and traceability matter.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>E10.</strong> In FirstThen&rsquo;s STAR architecture, why is predicate extraction done by an LLM rather than rule-based NLP?</p>
+  <button class="quiz-option" data-correct="false">A) LLMs are faster than rule-based systems</button>
+  <button class="quiz-option" data-correct="true">B) Natural language is ambiguous and varied &mdash; LLMs handle paraphrasing, typos, and implicit meaning that rigid patterns miss</button>
+  <button class="quiz-option" data-correct="false">C) Rule-based NLP cannot process English text</button>
+  <button class="quiz-option" data-correct="false">D) LLMs guarantee 100% accuracy on predicate extraction</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. Parents describe situations in countless ways (&ldquo;he can&rsquo;t sit still,&rdquo; &ldquo;focusing is hard for him,&rdquo; &ldquo;attention problems&rdquo;). An LLM can map all of these to <code>challenge(attention)</code> because it understands semantic meaning, while rules would need explicit patterns for each phrasing.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>E11.</strong> What is the key difference between &ldquo;retrieval&rdquo; and &ldquo;reranking&rdquo; in a RAG pipeline?</p>
+  <button class="quiz-option" data-correct="false">A) Retrieval uses neural models; reranking uses keyword matching</button>
+  <button class="quiz-option" data-correct="true">B) Retrieval casts a wide net efficiently; reranking uses a cross-encoder to precisely score the candidates</button>
+  <button class="quiz-option" data-correct="false">C) They are the same operation</button>
+  <button class="quiz-option" data-correct="false">D) Reranking happens before retrieval</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. Retrieval (BM25, bi-encoder) is fast but approximate &mdash; it finds top-K candidates. Reranking (cross-encoder) is slower but more accurate &mdash; it jointly encodes query + document to score relevance. This two-stage approach balances speed and quality.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>E12.</strong> Why does FirstThen use ASP for conversation logic instead of just prompting the LLM with rules?</p>
+  <button class="quiz-option" data-correct="false">A) ASP is cheaper to run</button>
+  <button class="quiz-option" data-correct="false">B) LLMs cannot follow instructions</button>
+  <button class="quiz-option" data-correct="true">C) ASP provides formal guarantees &mdash; rules are deterministic, verifiable, and explainable, required for clinical safety</button>
+  <button class="quiz-option" data-correct="false">D) ASP handles natural language better than LLMs</button>
+  <p class="quiz-explanation"><strong>C</strong> is correct. Prompting an LLM with &ldquo;never recommend medication&rdquo; is a <em>suggestion</em> it might violate. An ASP integrity constraint <code>:- recommended(X), medication(X).</code> is a mathematical guarantee &mdash; the solver cannot produce an answer set containing a medication recommendation. This is why Forsante Oy achieved EU MDR Class IIb certification using ASP.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>E13.</strong> What is &ldquo;temperature&rdquo; in LLM inference, and what setting would you use for predicate extraction?</p>
+  <button class="quiz-option" data-correct="false">A) A measure of computational load; set high for speed</button>
+  <button class="quiz-option" data-correct="true">B) A sampling parameter controlling output randomness; set LOW (~0) for deterministic extraction</button>
+  <button class="quiz-option" data-correct="false">C) A measure of model accuracy; set high for better results</button>
+  <button class="quiz-option" data-correct="false">D) A parameter controlling context window size</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. Temperature controls the softmax distribution over next tokens. Temperature &asymp;0 gives near-deterministic output, which is ideal for structured predicate extraction &mdash; the same input should produce the same predicates. For response generation, slightly higher temperature (0.3&ndash;0.7) produces more natural language.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>E14.</strong> In hybrid retrieval (BM25 + dense vectors), when does BM25 outperform vector search?</p>
+  <button class="quiz-option" data-correct="true">A) When queries contain domain-specific jargon, acronyms, or exact technical terms that embeddings may not capture</button>
+  <button class="quiz-option" data-correct="false">B) When the corpus is very small</button>
+  <button class="quiz-option" data-correct="false">C) When queries are long paragraphs</button>
+  <button class="quiz-option" data-correct="false">D) BM25 never outperforms vector search</button>
+  <p class="quiz-explanation"><strong>A</strong> is correct. BM25 excels at exact lexical matching. &ldquo;DSM-5 ADHD criteria&rdquo; benefits from BM25 because the exact tokens match directly. Dense embeddings might map this to semantically similar but lexically different passages. FirstThen&rsquo;s clinical terminology makes hybrid retrieval essential.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E15</span>
+    <span class="exercise-title">Embedding Index Lookup</span>
+  </div>
+  <p>Implement a simple in-memory vector index that stores document embeddings and retrieves the top-K most similar documents. This is what FAISS does under the hood.</p>
+  <pre><code class="language-python">import math
+
+def create_index(documents: list[dict]) -&gt; list[dict]:
+    """Store documents. Each has: {"id": str, "text": str, "embedding": list[float]}"""
+    return documents  # or your own structure
+
+def query_index(index, query_embedding: list[float], top_k: int) -&gt; list[str]:
+    """Find top_k most similar doc IDs using cosine similarity. Return sorted by sim desc."""
+    pass
+
+# Test Cases:
+docs = [
+    {"id": "doc1", "text": "ADHD morning routines", "embedding": [1.0, 0.0, 0.0]},
+    {"id": "doc2", "text": "medication guidelines", "embedding": [0.0, 1.0, 0.0]},
+    {"id": "doc3", "text": "behavioral strategies", "embedding": [0.7, 0.3, 0.0]},
+    {"id": "doc4", "text": "sleep hygiene tips", "embedding": [0.0, 0.0, 1.0]},
+]
+index = create_index(docs)
+results = query_index(index, [0.9, 0.1, 0.0], top_k=2)
+assert results[0] == "doc1"
+assert results[1] == "doc3"
+assert len(results) == 2</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">import math
+
+def create_index(documents):
+    return list(documents)
+
+def query_index(index, query_embedding, top_k):
+    def cosine_sim(a, b):
+        dot = sum(x * y for x, y in zip(a, b))
+        ma = math.sqrt(sum(x*x for x in a))
+        mb = math.sqrt(sum(x*x for x in b))
+        return dot / (ma * mb) if ma and mb else 0
+
+    scored = [(doc["id"], cosine_sim(query_embedding, doc["embedding"]))
+              for doc in index]
+    scored.sort(key=lambda x: x[1], reverse=True)
+    return [doc_id for doc_id, _ in scored[:top_k]]</code></pre>
+    <p>This is brute-force O(n) search &mdash; exactly what FAISS&rsquo;s <code>IndexFlatIP</code> does. For larger corpora, FAISS uses approximate methods (IVF, HNSW) to avoid scanning every vector. Understanding the exact algorithm helps debug retrieval quality issues &mdash; if top-K results look wrong, you can manually compute similarities to verify.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E16</span>
+    <span class="exercise-title">Predicate Validation Pipeline</span>
+  </div>
+  <p>Implement a validation layer that checks LLM-extracted predicates against a schema before they reach the ASP engine. Prevents malformed or dangerous predicates from entering reasoning.</p>
+  <pre><code class="language-python">SCHEMA = {
+    "child_age": {"arity": 1, "arg_types": ["int"],
+                  "constraints": {"0": {"min": 2, "max": 17}}},
+    "has_diagnosis": {"arity": 1, "arg_types": ["enum"],
+                      "constraints": {"0": {"values": ["adhd","anxiety","asd","odd"]}}},
+    "challenge": {"arity": 1, "arg_types": ["enum"],
+                  "constraints": {"0": {"values": [
+                      "morning_routines","homework","transitions",
+                      "emotional_regulation","social_skills","sleep","focus"]}}},
+    "severity": {"arity": 1, "arg_types": ["enum"],
+                 "constraints": {"0": {"values": ["mild","moderate","severe"]}}},
+    "parent_concern": {"arity": 2, "arg_types": ["enum", "str"],
+                       "constraints": {"0": {"values": ["mother","father","guardian"]}}},
+}
+
+def validate_predicates(predicates: list[dict], schema: dict) -&gt; dict:
+    """
+    Validate each predicate against schema.
+    Check: name exists, arity matches, arg types match, constraints satisfied.
+    Return {"valid": [...], "invalid": [{"predicate": dict, "error": str}]}
+    """
+    pass
+
+# Test Cases:
+preds = [
+    {"name": "child_age", "args": [7]},            # valid
+    {"name": "has_diagnosis", "args": ["adhd"]},    # valid
+    {"name": "child_age", "args": [25]},            # invalid: age &gt; 17
+    {"name": "challenge", "args": ["flying"]},      # invalid: not in enum
+    {"name": "unknown_pred", "args": ["x"]},        # invalid: not in schema
+    {"name": "child_age", "args": [7, 8]},          # invalid: wrong arity
+]
+result = validate_predicates(preds, SCHEMA)
+assert len(result["valid"]) == 2
+assert len(result["invalid"]) == 4</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def validate_predicates(predicates, schema):
+    valid, invalid = [], []
+
+    for pred in predicates:
+        name, args = pred["name"], pred["args"]
+
+        if name not in schema:
+            invalid.append({"predicate": pred, "error": f"Unknown predicate: {name}"})
+            continue
+
+        spec = schema[name]
+
+        if len(args) != spec["arity"]:
+            invalid.append({"predicate": pred,
+                "error": f"Arity mismatch: expected {spec['arity']}, got {len(args)}"})
+            continue
+
+        arg_ok = True
+        for i, (arg, atype) in enumerate(zip(args, spec["arg_types"])):
+            constraint = spec["constraints"].get(str(i), {})
+
+            if atype == "int":
+                if not isinstance(arg, int):
+                    invalid.append({"predicate": pred, "error": f"Arg {i}: expected int"})
+                    arg_ok = False; break
+                if "min" in constraint and arg &lt; constraint["min"]:
+                    invalid.append({"predicate": pred,
+                        "error": f"Arg {i}: {arg} below min {constraint['min']}"})
+                    arg_ok = False; break
+                if "max" in constraint and arg &gt; constraint["max"]:
+                    invalid.append({"predicate": pred,
+                        "error": f"Arg {i}: {arg} above max {constraint['max']}"})
+                    arg_ok = False; break
+            elif atype == "enum":
+                if arg not in constraint.get("values", []):
+                    invalid.append({"predicate": pred,
+                        "error": f"Arg {i}: '{arg}' not in allowed values"})
+                    arg_ok = False; break
+
+        if arg_ok:
+            valid.append(pred)
+
+    return {"valid": valid, "invalid": invalid}</code></pre>
+    <p>This validation layer sits between the LLM and the ASP solver. Without it, a hallucinated predicate like <code>child_age(150)</code> or <code>challenge(flying)</code> would enter the reasoning engine and produce nonsense. In healthcare, validation is defense-in-depth: even if the LLM makes a mistake, the system catches it before it affects reasoning.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">E17</span>
+    <span class="exercise-title">Conversation History Compression</span>
+  </div>
+  <p>When conversations get long, compress older turns to fit the context window while preserving key facts. Implement a conversation compressor for the ADHD coaching chatbot.</p>
+  <pre><code class="language-python">KEYWORDS = {"adhd", "diagnosis", "challenge", "age", "medication",
+            "strategy", "concern", "behavior", "school", "routine"}
+
+def compress_conversation(
+    turns: list[dict],  # [{"role": str, "text": str, "turn_num": int}]
+    max_recent_turns: int,
+    max_summary_tokens: int
+) -&gt; dict:
+    """
+    1. Keep last max_recent_turns verbatim
+    2. For older turns, extract "key fact" sentences (containing
+       a number or any KEYWORD)
+    3. Deduplicate facts (case-insensitive)
+    Return: {"summary": str, "recent_turns": list, "total_estimated_tokens": int}
+    """
+    pass
+
+# Test Cases:
+turns = [
+    {"role": "parent", "text": "My child is 7 and has ADHD.", "turn_num": 1},
+    {"role": "coach", "text": "What challenges are you facing?", "turn_num": 2},
+    {"role": "parent", "text": "Morning routines are hard. School says he can't focus.", "turn_num": 3},
+    {"role": "coach", "text": "Let me suggest some strategies.", "turn_num": 4},
+    {"role": "parent", "text": "We tried visual schedules.", "turn_num": 5},
+    {"role": "coach", "text": "How about timers?", "turn_num": 6},
+]
+result = compress_conversation(turns, max_recent_turns=2, max_summary_tokens=200)
+assert len(result["recent_turns"]) == 2
+assert result["recent_turns"][0]["turn_num"] == 5
+assert "ADHD" in result["summary"] or "7" in result["summary"]</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def compress_conversation(turns, max_recent_turns, max_summary_tokens):
+    recent = turns[-max_recent_turns:] if max_recent_turns &lt; len(turns) else turns
+    older = turns[:-max_recent_turns] if max_recent_turns &lt; len(turns) else []
+
+    facts_seen = set()
+    facts = []
+    for turn in older:
+        for sentence in turn["text"].replace('. ', '.\n').split('\n'):
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+            has_number = any(c.isdigit() for c in sentence)
+            has_keyword = any(kw in sentence.lower() for kw in KEYWORDS)
+            if has_number or has_keyword:
+                key = sentence.lower()
+                if key not in facts_seen:
+                    facts_seen.add(key)
+                    facts.append(sentence)
+
+    summary = ". ".join(facts) if facts else ""
+    # Trim to budget
+    while len(summary) // 4 &gt; max_summary_tokens and facts:
+        facts.pop()
+        summary = ". ".join(facts)
+
+    total_tokens = len(summary) // 4
+    for t in recent:
+        total_tokens += len(t["text"]) // 4
+
+    return {"summary": summary, "recent_turns": recent,
+            "total_estimated_tokens": total_tokens}</code></pre>
+    <p>Long coaching sessions can exceed context windows. This compressor preserves critical clinical facts (age, diagnosis, challenges) from early turns while keeping recent turns verbatim for conversational flow. Production systems might use an LLM to generate the summary, but keyword extraction is faster and doesn&rsquo;t risk hallucinating new facts into the history.</p>
+  </div>
+</div>
+
+
+  <h3>Section F: Agentic Protocols (F1&ndash;F11)</h3>
+  <div class="callout key">
+    <div class="callout-title">Priority: MEDIUM-HIGH</div>
+    <p>The role involves agentic protocols for orchestrating the chatbot system. The STAR pipeline is a multi-stage agent. Problems are in <strong>Python</strong>.</p>
+  </div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">F1</span>
+    <span class="exercise-title">Conversation State Machine</span>
+  </div>
+  <p>Implement a finite state machine managing conversation phases for the ADHD coaching chatbot. This is the Python-side orchestrator that works alongside the ASP reasoning engine.</p>
+  <pre><code class="language-python">from enum import Enum
+
+class Phase(Enum):
+    INTAKE = "intake"
+    STRATEGY = "strategy"
+    PRACTICE = "practice"
+    FOLLOWUP = "followup"
+    ENDED = "ended"
+
+TRANSITIONS = {
+    Phase.INTAKE: {"intake_complete": Phase.STRATEGY, "user_exit": Phase.ENDED},
+    Phase.STRATEGY: {"strategy_selected": Phase.PRACTICE,
+                     "need_more_info": Phase.INTAKE, "user_exit": Phase.ENDED},
+    Phase.PRACTICE: {"practice_complete": Phase.FOLLOWUP,
+                     "change_strategy": Phase.STRATEGY, "user_exit": Phase.ENDED},
+    Phase.FOLLOWUP: {"new_challenge": Phase.INTAKE,
+                     "session_end": Phase.ENDED, "user_exit": Phase.ENDED},
+    Phase.ENDED: {},
+}
+
+class ConversationFSM:
+    def __init__(self):
+        self.state = Phase.INTAKE
+        self.history = []  # list of (from_phase, event, to_phase)
+
+    def trigger(self, event: str) -&gt; bool:
+        """Attempt transition. Return True if valid, False if not."""
+        pass
+
+    def get_available_events(self) -&gt; list[str]:
+        """Return valid events for current state."""
+        pass
+
+    def can_reach(self, target: Phase) -&gt; bool:
+        """Return True if target is reachable via any transitions (BFS/DFS)."""
+        pass
+
+# Test Cases:
+fsm = ConversationFSM()
+assert fsm.state == Phase.INTAKE
+assert "intake_complete" in fsm.get_available_events()
+assert fsm.trigger("intake_complete") == True
+assert fsm.state == Phase.STRATEGY
+assert fsm.trigger("intake_complete") == False  # invalid from STRATEGY
+assert fsm.trigger("strategy_selected") == True
+assert fsm.trigger("change_strategy") == True   # back to STRATEGY
+assert len(fsm.history) == 3
+
+fsm2 = ConversationFSM()
+assert fsm2.can_reach(Phase.FOLLOWUP) == True
+fsm2.trigger("user_exit")
+assert fsm2.can_reach(Phase.STRATEGY) == False  # ENDED has no transitions</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">class ConversationFSM:
+    def __init__(self):
+        self.state = Phase.INTAKE
+        self.history = []
+
+    def trigger(self, event):
+        transitions = TRANSITIONS.get(self.state, {})
+        if event not in transitions:
+            return False
+        old = self.state
+        self.state = transitions[event]
+        self.history.append((old, event, self.state))
+        return True
+
+    def get_available_events(self):
+        return list(TRANSITIONS.get(self.state, {}).keys())
+
+    def can_reach(self, target):
+        visited = set()
+        queue = [self.state]
+        while queue:
+            current = queue.pop(0)
+            if current == target:
+                return True
+            if current in visited:
+                continue
+            visited.add(current)
+            for next_state in TRANSITIONS.get(current, {}).values():
+                queue.append(next_state)
+        return False</code></pre>
+    <p>This FSM manages the coaching session flow. The ASP layer determines conversation <em>content</em> (what strategies to recommend), while the FSM manages session <em>structure</em> (which phase we&rsquo;re in). The <code>can_reach</code> method is useful for UI &mdash; showing the user what&rsquo;s possible from the current state. The history log enables session analytics.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">F2</span>
+    <span class="exercise-title">Tool Call Parser &amp; Executor</span>
+  </div>
+  <p>Implement a system that parses LLM-generated tool calls and executes them safely. This is the core of agent-tool interaction.</p>
+  <pre><code class="language-python">import json, re
+
+TOOLS = {
+    "lookup_strategy": {
+        "params": {"strategy_name": "str"},
+        "handler": lambda p: f"Strategy '{p['strategy_name']}': Use visual cues and timers."
+    },
+    "get_child_profile": {
+        "params": {"child_id": "str"},
+        "handler": lambda p: f"Child {p['child_id']}: age 7, ADHD, morning routines"
+    },
+    "log_session_note": {
+        "params": {"note": "str", "category": "str"},
+        "handler": lambda p: f"Logged '{p['note']}' under {p['category']}"
+    },
+}
+
+def parse_and_execute(llm_output: str, tools: dict) -&gt; list[dict]:
+    """
+    Parse tool calls from LLM output (format below) and execute them.
+    &lt;tool_call&gt;{"name": "...", "arguments": {...}}&lt;/tool_call&gt;
+
+    For each: validate tool exists, validate params, execute handler.
+    Return: [{"tool": str, "arguments": dict, "result": str,
+              "status": "success"|"error", "error": str|None}]
+    """
+    pass
+
+# Test Cases:
+output = '''Let me check that.
+&lt;tool_call&gt;{"name": "lookup_strategy", "arguments": {"strategy_name": "visual schedules"}}&lt;/tool_call&gt;
+And also:
+&lt;tool_call&gt;{"name": "get_child_profile", "arguments": {"child_id": "c001"}}&lt;/tool_call&gt;'''
+
+results = parse_and_execute(output, TOOLS)
+assert len(results) == 2
+assert results[0]["status"] == "success"
+assert "visual schedules" in results[0]["result"]
+
+# Error: unknown tool
+err = '&lt;tool_call&gt;{"name": "delete_user", "arguments": {"id": "1"}}&lt;/tool_call&gt;'
+assert parse_and_execute(err, TOOLS)[0]["status"] == "error"
+
+# Error: missing params
+bad = '&lt;tool_call&gt;{"name": "lookup_strategy", "arguments": {}}&lt;/tool_call&gt;'
+assert parse_and_execute(bad, TOOLS)[0]["status"] == "error"</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def parse_and_execute(llm_output, tools):
+    results = []
+    calls = re.findall(r'&lt;tool_call&gt;(.*?)&lt;/tool_call&gt;', llm_output, re.DOTALL)
+
+    for call_str in calls:
+        try:
+            call = json.loads(call_str.strip())
+        except json.JSONDecodeError:
+            results.append({"tool": "unknown", "arguments": {},
+                "result": "", "status": "error", "error": "Invalid JSON"})
+            continue
+
+        name = call.get("name", "")
+        args = call.get("arguments", {})
+
+        if name not in tools:
+            results.append({"tool": name, "arguments": args,
+                "result": "", "status": "error", "error": f"Unknown tool: {name}"})
+            continue
+
+        tool = tools[name]
+        missing = [p for p in tool["params"] if p not in args]
+        if missing:
+            results.append({"tool": name, "arguments": args, "result": "",
+                "status": "error", "error": f"Missing params: {missing}"})
+            continue
+
+        try:
+            result = tool["handler"](args)
+            results.append({"tool": name, "arguments": args,
+                "result": result, "status": "success", "error": None})
+        except Exception as e:
+            results.append({"tool": name, "arguments": args,
+                "result": "", "status": "error", "error": str(e)})
+
+    return results</code></pre>
+    <p>The LLM generates structured tool call requests; the orchestrator validates and executes them. The key insight is that the LLM <em>never directly executes code</em> &mdash; the orchestrator mediates every tool invocation. This is how agents interact with the ASP solver, databases, and external APIs safely.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">F3</span>
+    <span class="exercise-title">Supervisor Agent Router</span>
+  </div>
+  <p>Implement a supervisor agent that routes messages to specialized sub-agents based on intent, with a <strong>safety override</strong>. This mirrors FirstThen&rsquo;s multi-agent architecture.</p>
+  <pre><code class="language-python">AGENTS = {
+    "intake_agent": {
+        "keywords": ["age", "child", "name", "diagnosis", "family",
+                     "tell me about", "introduce"],
+        "priority": 1,
+    },
+    "strategy_agent": {
+        "keywords": ["strategy", "help", "technique", "how to",
+                     "what can i do", "tip", "suggest"],
+        "priority": 2,
+    },
+    "safety_agent": {
+        "keywords": ["medication", "medicine", "drug", "crisis",
+                     "emergency", "harm", "suicide", "hurt"],
+        "priority": 0,  # highest: always checked first
+    },
+    "progress_agent": {
+        "keywords": ["progress", "better", "worse", "improvement",
+                     "working", "update", "last time"],
+        "priority": 3,
+    },
+}
+
+def route_message(message: str, agents: dict, phase: str) -&gt; dict:
+    """
+    Route logic:
+    1. Count keyword matches per agent (case-insensitive substring)
+    2. Safety agent ALWAYS wins if ANY match (priority 0 override)
+    3. Otherwise, most keyword matches wins; ties broken by priority
+    4. No matches: route by phase (intake/strategy/practice/followup)
+    Return: {"agent": str, "confidence": "high"|"medium"|"low", "matches": int}
+      high = 3+ matches, medium = 1-2, low = 0 (phase fallback)
+    """
+    pass
+
+# Test Cases:
+r = route_message("My child is 7 and was diagnosed last year", AGENTS, "intake")
+assert r["agent"] == "intake_agent"
+
+r = route_message("What strategies help with morning routines?", AGENTS, "strategy")
+assert r["agent"] == "strategy_agent"
+
+# Safety override
+r = route_message("Should we try medication for focus?", AGENTS, "strategy")
+assert r["agent"] == "safety_agent"
+
+# Phase fallback
+r = route_message("Okay sounds good", AGENTS, "intake")
+assert r["agent"] == "intake_agent"
+assert r["confidence"] == "low"
+
+# Safety ALWAYS wins even with other matches
+r = route_message("Medication is making behavior worse, any strategy tips?",
+                  AGENTS, "strategy")
+assert r["agent"] == "safety_agent"</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def route_message(message, agents, phase):
+    msg_lower = message.lower()
+    scores = {}
+    for agent_name, config in agents.items():
+        count = sum(1 for kw in config["keywords"] if kw in msg_lower)
+        scores[agent_name] = count
+
+    # Safety override
+    if scores.get("safety_agent", 0) &gt; 0:
+        return {"agent": "safety_agent",
+                "confidence": "high" if scores["safety_agent"] &gt;= 3 else "medium",
+                "matches": scores["safety_agent"]}
+
+    # Best non-safety agent
+    best_agent = None
+    best_count = 0
+    best_priority = float('inf')
+
+    for agent_name, count in scores.items():
+        if agent_name == "safety_agent":
+            continue
+        priority = agents[agent_name]["priority"]
+        if count &gt; best_count or (count == best_count and priority &lt; best_priority):
+            best_agent = agent_name
+            best_count = count
+            best_priority = priority
+
+    if best_count &gt; 0:
+        conf = "high" if best_count &gt;= 3 else "medium"
+        return {"agent": best_agent, "confidence": conf, "matches": best_count}
+
+    # Phase-based fallback
+    phase_map = {"intake": "intake_agent", "strategy": "strategy_agent",
+                 "practice": "strategy_agent", "followup": "progress_agent"}
+    return {"agent": phase_map.get(phase, "intake_agent"),
+            "confidence": "low", "matches": 0}</code></pre>
+    <p>The safety agent has <strong>hard override authority</strong> &mdash; any mention of medication, crisis, or harm immediately routes there, regardless of other matches. This is defense-in-depth: even if the LLM extracts predicates normally, the router ensures safety-critical topics are handled by a specialized agent with strict guardrails. This supervisor pattern (used in LangGraph, CrewAI) is directly relevant to FirstThen&rsquo;s architecture.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">F4</span>
+    <span class="exercise-title">Agent Memory Store</span>
+  </div>
+  <p>Implement agent memory supporting short-term (session) and long-term (cross-session) storage with search.</p>
+  <pre><code class="language-python">class AgentMemory:
+    def __init__(self):
+        self.short_term = {}   # session-scoped
+        self.long_term = {}    # persists across sessions
+
+    def store(self, key: str, value, long_term: bool = False):
+        """Store fact. If long_term=True, persist in long-term too."""
+        pass
+
+    def recall(self, key: str):
+        """Check short-term first, then long-term. Return None if not found."""
+        pass
+
+    def clear_session(self):
+        """Clear short-term only. Long-term persists."""
+        pass
+
+    def search(self, query: str) -&gt; list[tuple[str, any]]:
+        """Search keys containing query (case-insensitive). Short-term wins on dupes."""
+        pass
+
+# Test Cases:
+mem = AgentMemory()
+mem.store("child_age", 7, long_term=True)
+mem.store("current_topic", "morning routines")
+mem.store("child_name", "Alex", long_term=True)
+
+assert mem.recall("child_age") == 7
+assert mem.recall("current_topic") == "morning routines"
+assert mem.recall("nonexistent") is None
+
+mem.clear_session()
+assert mem.recall("current_topic") is None   # cleared
+assert mem.recall("child_age") == 7          # persisted
+
+mem.store("child_challenge", "focus")
+results = mem.search("child")
+assert len(results) &gt;= 2  # child_age, child_name, child_challenge</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">class AgentMemory:
+    def __init__(self):
+        self.short_term = {}
+        self.long_term = {}
+
+    def store(self, key, value, long_term=False):
+        self.short_term[key] = value
+        if long_term:
+            self.long_term[key] = value
+
+    def recall(self, key):
+        if key in self.short_term:
+            return self.short_term[key]
+        return self.long_term.get(key)
+
+    def clear_session(self):
+        self.short_term.clear()
+
+    def search(self, query):
+        query_lower = query.lower()
+        results = {}
+        # Long-term first, then short-term overwrites
+        for k, v in self.long_term.items():
+            if query_lower in k.lower():
+                results[k] = v
+        for k, v in self.short_term.items():
+            if query_lower in k.lower():
+                results[k] = v
+        return list(results.items())</code></pre>
+    <p>Agent memory maintains context across turns (short-term) and sessions (long-term). For FirstThen, long-term memory stores the child&rsquo;s profile (age, diagnosis, tried strategies), while short-term tracks the current conversation topic. This is simpler than a full vector store but effective for structured facts.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">F5</span>
+    <span class="exercise-title">Retry with Exponential Backoff</span>
+  </div>
+  <p>Implement a retry decorator for unreliable API calls (LLM APIs, databases). Essential for production agent systems.</p>
+  <pre><code class="language-python">import time, random
+
+def retry_with_backoff(max_retries=3, base_delay=1.0, max_delay=30.0,
+                       jitter=True, retryable_exceptions=(Exception,)):
+    """
+    Decorator: retries with exponential backoff.
+    delay = min(base_delay * 2^attempt, max_delay)
+    If jitter: delay *= random.uniform(0.5, 1.5)
+    Re-raise last exception if all retries exhausted.
+    Do NOT retry non-retryable exceptions.
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            pass  # implement
+        return wrapper
+    return decorator
+
+# Test Cases:
+call_count = 0
+
+@retry_with_backoff(max_retries=3, base_delay=0.01, jitter=False,
+                     retryable_exceptions=(ConnectionError,))
+def flaky_api():
+    global call_count
+    call_count += 1
+    if call_count &lt; 3:
+        raise ConnectionError("timeout")
+    return "success"
+
+call_count = 0
+assert flaky_api() == "success"
+assert call_count == 3
+
+# Non-retryable exception propagates immediately
+@retry_with_backoff(max_retries=3, base_delay=0.01,
+                     retryable_exceptions=(ConnectionError,))
+def bad_input():
+    raise ValueError("invalid")
+
+try:
+    bad_input()
+    assert False
+except ValueError:
+    pass  # correct</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def retry_with_backoff(max_retries=3, base_delay=1.0, max_delay=30.0,
+                       jitter=True, retryable_exceptions=(Exception,)):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            last_exc = None
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except retryable_exceptions as e:
+                    last_exc = e
+                    if attempt &lt; max_retries:
+                        delay = min(base_delay * (2 ** attempt), max_delay)
+                        if jitter:
+                            delay *= random.uniform(0.5, 1.5)
+                        time.sleep(delay)
+                except Exception:
+                    raise  # non-retryable: propagate immediately
+            raise last_exc
+        return wrapper
+    return decorator</code></pre>
+    <p>Every production agent system needs retry logic. LLM APIs (OpenAI, Anthropic) return 429 (rate limit) and 503 (overloaded) errors that are transient. Exponential backoff prevents thundering herds, and jitter prevents synchronized retries from multiple clients. The key design: only retry <em>retryable</em> exceptions &mdash; a <code>ValueError</code> from bad input won&rsquo;t be fixed by retrying.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">F6</span>
+    <span class="exercise-title">STAR Pipeline Orchestrator</span>
+  </div>
+  <p>Implement the 3-stage STAR pipeline: (1) LLM predicate extraction &rarr; (2) ASP reasoning &rarr; (3) LLM response generation. Handle errors at each stage with graceful fallbacks.</p>
+  <pre><code class="language-python">class ExtractionError(Exception): pass
+class ReasoningError(Exception): pass
+class GenerationError(Exception): pass
+
+class STARPipeline:
+    def __init__(self, extractor, reasoner, generator):
+        """
+        extractor: callable(str) -&gt; list[dict]
+        reasoner: callable(list[dict], dict) -&gt; dict
+        generator: callable(dict, str) -&gt; str
+        """
+        self.extractor = extractor
+        self.reasoner = reasoner
+        self.generator = generator
+
+    def run(self, user_input: str, context: dict) -&gt; dict:
+        """
+        Execute full pipeline with fallbacks:
+        - Extraction fails: use empty predicates []
+        - Reasoning fails: use {"actions": ["acknowledge"],
+            "response_hints": ["I understand. Could you tell me more?"]}
+        - Generation fails: return response_hints[0]
+
+        Return: {"response": str, "predicates": list, "asp_output": dict,
+                 "stages_completed": list[str], "errors": list[dict]}
+        """
+        pass
+
+# Test Cases:
+# Happy path
+p1 = STARPipeline(
+    lambda inp: [{"name": "child_age", "args": [7]}],
+    lambda preds, ctx: {"actions": ["suggest"], "response_hints": ["Try schedules"]},
+    lambda asp, inp: "I'd recommend visual schedules!"
+)
+r1 = p1.run("My child is 7", {})
+assert r1["response"] == "I'd recommend visual schedules!"
+assert len(r1["stages_completed"]) == 3
+assert len(r1["errors"]) == 0
+
+# All stages fail - still returns something
+p2 = STARPipeline(
+    lambda inp: (_ for _ in ()).throw(ExtractionError("fail")),
+    lambda p, c: (_ for _ in ()).throw(ReasoningError("fail")),
+    lambda a, i: (_ for _ in ()).throw(GenerationError("fail")),
+)
+r2 = p2.run("hello", {})
+assert r2["response"] == "I understand. Could you tell me more?"
+assert len(r2["errors"]) == 3</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">class STARPipeline:
+    def __init__(self, extractor, reasoner, generator):
+        self.extractor = extractor
+        self.reasoner = reasoner
+        self.generator = generator
+
+    def run(self, user_input, context):
+        stages = []
+        errors = []
+        default_asp = {"actions": ["acknowledge"],
+                       "response_hints": ["I understand. Could you tell me more?"]}
+
+        # Stage 1: Extract
+        try:
+            predicates = self.extractor(user_input)
+            stages.append("extraction")
+        except Exception as e:
+            predicates = []
+            errors.append({"stage": "extraction", "error": str(e)})
+
+        # Stage 2: Reason
+        try:
+            asp_output = self.reasoner(predicates, context)
+            stages.append("reasoning")
+        except Exception as e:
+            asp_output = default_asp
+            errors.append({"stage": "reasoning", "error": str(e)})
+
+        # Stage 3: Generate
+        try:
+            response = self.generator(asp_output, user_input)
+            stages.append("generation")
+        except Exception as e:
+            response = asp_output.get("response_hints", ["I understand."])[0]
+            errors.append({"stage": "generation", "error": str(e)})
+
+        return {"response": response, "predicates": predicates,
+                "asp_output": asp_output, "stages_completed": stages,
+                "errors": errors}</code></pre>
+    <p>This is the <strong>actual STAR pipeline</strong>. Each stage has a fallback so the system never crashes silently &mdash; even if the LLM API is down, the user gets a coherent response from the ASP hints. The error log enables debugging (&ldquo;extraction failed 3 times today &mdash; is the LLM prompt broken?&rdquo;). The ASP layer (~8ms) is always the most reliable stage because it has no external dependencies.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">F7</span>
+    <span class="exercise-title">Rate-Limited Agent Queue</span>
+  </div>
+  <p>Implement a task queue that respects API rate limits when making LLM calls. Agents often need to batch and throttle requests.</p>
+  <pre><code class="language-python">from collections import deque
+
+class RateLimitedQueue:
+    def __init__(self, max_calls_per_minute: int):
+        self.max_calls = max_calls_per_minute
+        self.timestamps = deque()
+        self.queue = deque()
+
+    def can_call_now(self, current_time: float) -&gt; bool:
+        """Check if a call is allowed. Clean up timestamps &gt; 60s old."""
+        pass
+
+    def next_available_time(self, current_time: float) -&gt; float:
+        """When can the next call happen?"""
+        pass
+
+    def enqueue(self, task: dict):
+        """Add {"id": str, "payload": any} to queue."""
+        pass
+
+    def process_next(self, current_time: float):
+        """
+        If queue non-empty and can call: record call, return task.
+        If queue empty: return None.
+        If rate limited: return {"wait_until": float}.
+        """
+        pass
+
+# Test Cases:
+q = RateLimitedQueue(max_calls_per_minute=3)
+t = 1000.0
+q.enqueue({"id": "1", "payload": "extract"})
+q.enqueue({"id": "2", "payload": "generate"})
+q.enqueue({"id": "3", "payload": "validate"})
+q.enqueue({"id": "4", "payload": "log"})
+
+assert q.process_next(t)["id"] == "1"
+assert q.process_next(t + 0.1)["id"] == "2"
+assert q.process_next(t + 0.2)["id"] == "3"
+assert "wait_until" in q.process_next(t + 0.3)  # rate limited
+assert q.process_next(t + 61)["id"] == "4"       # window expired</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">class RateLimitedQueue:
+    def __init__(self, max_calls_per_minute):
+        self.max_calls = max_calls_per_minute
+        self.timestamps = deque()
+        self.queue = deque()
+
+    def _clean(self, current_time):
+        while self.timestamps and current_time - self.timestamps[0] &gt; 60:
+            self.timestamps.popleft()
+
+    def can_call_now(self, current_time):
+        self._clean(current_time)
+        return len(self.timestamps) &lt; self.max_calls
+
+    def next_available_time(self, current_time):
+        self._clean(current_time)
+        if len(self.timestamps) &lt; self.max_calls:
+            return current_time
+        return self.timestamps[0] + 60.001
+
+    def enqueue(self, task):
+        self.queue.append(task)
+
+    def process_next(self, current_time):
+        if not self.queue:
+            return None
+        if self.can_call_now(current_time):
+            self.timestamps.append(current_time)
+            return self.queue.popleft()
+        return {"wait_until": self.next_available_time(current_time)}</code></pre>
+    <p>LLM APIs have strict rate limits (e.g., OpenAI: 60 RPM). A production agent system with multiple parallel agents (intake, strategy, safety) needs centralized rate limiting to avoid 429 errors. The sliding window approach ensures burst traffic is smoothed without artificial delays when the window is clear.</p>
+  </div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>F8.</strong> What is the &ldquo;supervisor&rdquo; pattern in multi-agent systems?</p>
+  <button class="quiz-option" data-correct="false">A) A single agent that handles all tasks sequentially</button>
+  <button class="quiz-option" data-correct="true">B) A top-level agent that routes to specialized sub-agents, aggregates results, and decides next steps</button>
+  <button class="quiz-option" data-correct="false">C) A monitoring system that logs agent performance</button>
+  <button class="quiz-option" data-correct="false">D) A pattern where agents supervise human users</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. The supervisor pattern (LangGraph, CrewAI) has a coordinator that delegates to specialized agents. In FirstThen&rsquo;s context, a supervisor routes to intake, strategy, safety, and progress agents. Henry built this exact pattern in his Suspect Detection project with LangGraph.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>F9.</strong> Why would FirstThen&rsquo;s chatbot benefit from an agentic architecture over a monolithic LLM?</p>
+  <button class="quiz-option" data-correct="false">A) Agents are faster than a single LLM</button>
+  <button class="quiz-option" data-correct="true">B) Separation of concerns: each agent specializes, making the system testable and giving the safety agent hard override authority</button>
+  <button class="quiz-option" data-correct="false">C) Agents use less memory</button>
+  <button class="quiz-option" data-correct="false">D) Agents don&rsquo;t need LLMs</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. A monolithic prompt handling safety, intake, strategy, AND generation is fragile and untestable. With agents, you can unit-test the safety agent independently, update strategies without touching intake, and ensure safety always has veto power.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>F10.</strong> What is &ldquo;tool use&rdquo; (function calling) in LLM agents?</p>
+  <button class="quiz-option" data-correct="false">A) The LLM directly executes code on the server</button>
+  <button class="quiz-option" data-correct="true">B) The LLM generates structured requests; an orchestrator executes them and returns results</button>
+  <button class="quiz-option" data-correct="false">C) The user manually calls functions and pastes results</button>
+  <button class="quiz-option" data-correct="false">D) Tool use means the LLM can access the internet directly</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. The LLM outputs a structured tool call (JSON with function name and arguments). The host application validates and executes the function, then returns the result. The LLM never directly executes code &mdash; the orchestrator mediates every tool invocation. This is how agents interact with ASP solvers, databases, and APIs safely.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>F11.</strong> In a healthcare chatbot, why should the safety agent have &ldquo;hard override&rdquo; rather than advisory authority?</p>
+  <button class="quiz-option" data-correct="false">A) It&rsquo;s more efficient</button>
+  <button class="quiz-option" data-correct="true">B) Advisory safety can be overridden by other agents &mdash; hard override ensures dangerous responses are BLOCKED regardless</button>
+  <button class="quiz-option" data-correct="false">C) Hard override makes the chatbot friendlier</button>
+  <button class="quiz-option" data-correct="false">D) It&rsquo;s required by HIPAA</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. If the safety agent merely advises, another agent could still generate a response mentioning dosages. Hard override intercepts and replaces any unsafe response &mdash; similar to how ASP integrity constraints provide mathematical guarantees. This is defense-in-depth for clinical safety.</p>
+</div>
+
+
+  <h3>Section G: APIs (G1&ndash;G6)</h3>
+  <div class="callout warn">
+    <div class="callout-title">Priority: LOW-MEDIUM</div>
+    <p>The JD mentions &ldquo;production software development&rdquo; but the focus is AI/ML. These confirm baseline competency. Mostly conceptual.</p>
+  </div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>G1.</strong> A FastAPI endpoint receives a parent&rsquo;s message and returns the chatbot&rsquo;s response. Which HTTP method and status code are most appropriate?</p>
+  <button class="quiz-option" data-correct="false">A) <code>GET /chat?message=hello</code> &rarr; 200 OK</button>
+  <button class="quiz-option" data-correct="true">B) <code>POST /chat</code> with JSON body &rarr; 200 OK</button>
+  <button class="quiz-option" data-correct="false">C) <code>PUT /chat</code> with JSON body &rarr; 201 Created</button>
+  <button class="quiz-option" data-correct="false">D) <code>POST /chat</code> with JSON body &rarr; 201 Created</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. POST is appropriate because sending a message has side effects (creates a response, updates conversation state). GET should be idempotent. 200 OK (not 201) because we&rsquo;re processing a request, not persisting a new resource. PUT implies replacing a resource at a URL, which doesn&rsquo;t fit a chat interaction.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>G2.</strong> You need an API for the STAR pipeline that returns intermediate results (predicates, ASP output, final response). Which pattern is most appropriate?</p>
+  <button class="quiz-option" data-correct="false">A) Three separate endpoints called sequentially by the client</button>
+  <button class="quiz-option" data-correct="false">B) One endpoint returning all stages in nested JSON</button>
+  <button class="quiz-option" data-correct="false">C) WebSocket streaming each stage as it completes</button>
+  <button class="quiz-option" data-correct="true">D) B for synchronous use, C for real-time UI &mdash; both valid depending on client needs</button>
+  <p class="quiz-explanation"><strong>D</strong> is correct. For simple integration, a single POST returning <code>{"predicates": [...], "asp_output": {...}, "response": "..."}</code> is clean. For real-time UI showing &ldquo;Extracting predicates&hellip; Reasoning&hellip; Generating&hellip;&rdquo;, WebSocket or SSE streaming is better. Good API design considers multiple access patterns.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>G3.</strong> What is the purpose of request validation (e.g., Pydantic in FastAPI)?</p>
+  <button class="quiz-option" data-correct="false">A) To slow the API down for security</button>
+  <button class="quiz-option" data-correct="true">B) To ensure incoming data matches expected types and constraints BEFORE processing</button>
+  <button class="quiz-option" data-correct="false">C) To encrypt the request</button>
+  <button class="quiz-option" data-correct="false">D) To compress the request payload</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. In a healthcare chatbot, validate that <code>child_age</code> is 2&ndash;17, <code>message</code> isn&rsquo;t empty, and session IDs are valid UUIDs &mdash; all before hitting the LLM or ASP engine. Pydantic in FastAPI does this automatically and returns 422 errors with field-level feedback.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>G4.</strong> Your chatbot API needs to handle a scenario where the LLM API is down. Best practice?</p>
+  <button class="quiz-option" data-correct="false">A) Return 200 with an empty response</button>
+  <button class="quiz-option" data-correct="true">B) Return 503 with retry-after header and a fallback message from the ASP layer</button>
+  <button class="quiz-option" data-correct="false">C) Crash the server</button>
+  <button class="quiz-option" data-correct="false">D) Wait indefinitely for the LLM to respond</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. 503 tells the client the issue is temporary. The ASP layer doesn&rsquo;t depend on external APIs, so it can provide fallback response hints. This is a key benefit of the hybrid LLM + ASP architecture &mdash; the deterministic layer is always available even when the LLM is down.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">G5</span>
+    <span class="exercise-title">FastAPI Chat Endpoint</span>
+  </div>
+  <p>Write request/response models and a FastAPI endpoint for the chatbot with input validation and safety keyword detection.</p>
+  <pre><code class="language-python">from pydantic import BaseModel, Field
+
+class ChatRequest(BaseModel):
+    """
+    Validate:
+    - message: non-empty, max 2000 chars
+    - session_id: non-empty
+    - child_age: optional int, if provided must be 2-17
+    """
+    message: str = Field(..., min_length=1, max_length=2000)
+    session_id: str = Field(..., min_length=1)
+    child_age: int | None = Field(None, ge=2, le=17)
+
+class ChatResponse(BaseModel):
+    response: str
+    session_id: str
+    predicates_extracted: list[dict]
+    confidence: float = Field(..., ge=0.0, le=1.0)
+
+# Write the endpoint:
+# POST /chat
+# - If message contains "medication" or "drug", return safety response
+#   with confidence=1.0 and predicates=[{"name":"safety_flag","args":["medication"]}]
+# - Otherwise return normal response with confidence=0.8
+
+# from fastapi import FastAPI
+# app = FastAPI()
+# @app.post("/chat", response_model=ChatResponse)
+# def chat(request: ChatRequest) -&gt; ChatResponse:
+#     pass</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">from fastapi import FastAPI
+from pydantic import BaseModel, Field
+
+app = FastAPI()
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    session_id: str = Field(..., min_length=1)
+    child_age: int | None = Field(None, ge=2, le=17)
+
+class ChatResponse(BaseModel):
+    response: str
+    session_id: str
+    predicates_extracted: list[dict]
+    confidence: float = Field(..., ge=0.0, le=1.0)
+
+SAFETY_KEYWORDS = {"medication", "drug", "medicine"}
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(request: ChatRequest) -&gt; ChatResponse:
+    msg_lower = request.message.lower()
+
+    if any(kw in msg_lower for kw in SAFETY_KEYWORDS):
+        return ChatResponse(
+            response="I'm not able to provide advice about medication. "
+                     "Please consult your child's healthcare provider.",
+            session_id=request.session_id,
+            predicates_extracted=[{"name": "safety_flag", "args": ["medication"]}],
+            confidence=1.0
+        )
+
+    return ChatResponse(
+        response="Thank you for sharing. Let me look into strategies for that.",
+        session_id=request.session_id,
+        predicates_extracted=[],
+        confidence=0.8
+    )</code></pre>
+    <p>Pydantic models auto-validate everything: <code>child_age=25</code> returns a 422, empty <code>message</code> returns a 422, and the response model guarantees the output schema. The safety keyword check is a simple first-pass filter &mdash; the real safety logic lives in the ASP layer and the safety agent.</p>
+  </div>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">G6</span>
+    <span class="exercise-title">API Key Authentication</span>
+  </div>
+  <p>Implement a simple API key authentication check for the chatbot service.</p>
+  <pre><code class="language-python">def authenticate_request(
+    headers: dict[str, str],
+    valid_api_keys: set[str]
+) -&gt; dict:
+    """
+    Check X-API-Key header.
+    Return {"authenticated": True, "key": str} or
+           {"authenticated": False, "error": str}
+    Errors: "Missing X-API-Key header" or "Invalid API key"
+    """
+    pass
+
+# Test Cases:
+keys = {"key_abc123", "key_xyz789"}
+assert authenticate_request({"X-API-Key": "key_abc123"}, keys)["authenticated"]
+assert not authenticate_request({"X-API-Key": "wrong"}, keys)["authenticated"]
+assert not authenticate_request({}, keys)["authenticated"]
+assert "Missing" in authenticate_request({}, keys)["error"]</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-python">def authenticate_request(headers, valid_api_keys):
+    key = headers.get("X-API-Key")
+    if key is None:
+        return {"authenticated": False, "error": "Missing X-API-Key header"}
+    if key not in valid_api_keys:
+        return {"authenticated": False, "error": "Invalid API key"}
+    return {"authenticated": True, "key": key}</code></pre>
+    <p>Simple API key auth is the minimum for a production chatbot. In practice, you&rsquo;d use OAuth2 or JWT tokens, especially for a healthcare application handling sensitive family data. FastAPI has built-in dependency injection for authentication middleware.</p>
+  </div>
+</div>
+
+
+  <h3>Section H: Databases (H1&ndash;H5)</h3>
+  <div class="callout warn">
+    <div class="callout-title">Priority: LOW</div>
+    <p>Mentioned in the JD but clearly not the focus. These confirm baseline knowledge of data storage for the chatbot system.</p>
+  </div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>H1.</strong> FirstThen needs to store conversation history. Which database approach is most appropriate?</p>
+  <button class="quiz-option" data-correct="false">A) Relational only (PostgreSQL with fixed schema)</button>
+  <button class="quiz-option" data-correct="false">B) Document store only (MongoDB with flexible session documents)</button>
+  <button class="quiz-option" data-correct="false">C) Graph database (Neo4j)</button>
+  <button class="quiz-option" data-correct="true">D) Relational for structured data (profiles, metadata) + document store for flexible conversation data &mdash; polyglot persistence</button>
+  <p class="quiz-explanation"><strong>D</strong> is correct. Conversation data is semi-structured (variable turns, nested predicates). A document store handles this naturally. But user profiles, billing, and analytics benefit from relational structure. The right answer in practice is often using both, depending on the access patterns.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>H2.</strong> You&rsquo;re designing storage for extracted predicates from conversations. Best approach?</p>
+  <button class="quiz-option" data-correct="false">A) One column per predicate (child_age, has_diagnosis, etc.)</button>
+  <button class="quiz-option" data-correct="false">B) A JSON/JSONB column for flexible storage</button>
+  <button class="quiz-option" data-correct="false">C) A normalized table: (session_id, predicate_name, arg_position, arg_value)</button>
+  <button class="quiz-option" data-correct="true">D) JSONB for fast single-session reads; normalized table for cross-session analytics queries</button>
+  <p class="quiz-explanation"><strong>D</strong> is correct. JSONB is great for storing/retrieving predicates for one session. But analytics queries like &ldquo;most common challenge?&rdquo; or &ldquo;average child age?&rdquo; need a normalized table with SQL aggregations. Many teams start with JSONB and add normalized projections when analytics needs arise.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>H3.</strong> What column would you index FIRST on the conversation history table?</p>
+  <button class="quiz-option" data-correct="false">A) The message text column for full-text search</button>
+  <button class="quiz-option" data-correct="true">B) <code>session_id</code> &mdash; most queries fetch all messages for a given session</button>
+  <button class="quiz-option" data-correct="false">C) The primary key only</button>
+  <button class="quiz-option" data-correct="false">D) All columns equally</button>
+  <p class="quiz-explanation"><strong>B</strong> is correct. The most common query is &ldquo;get conversation for session X.&rdquo; A composite index on <code>(session_id, created_at)</code> enables both lookup and ordered retrieval. Full-text indexing on message content (GIN index in PostgreSQL) is only needed for searching message content across sessions.</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-question"><strong>H4.</strong> What does ACID stand for, and which properties matter most for the chatbot&rsquo;s conversation state?</p>
+  <button class="quiz-option" data-correct="false">A) Atomicity, Consistency, Isolation, Durability &mdash; only Durability matters</button>
+  <button class="quiz-option" data-correct="false">B) Atomicity, Consistency, Isolation, Durability &mdash; only Consistency matters</button>
+  <button class="quiz-option" data-correct="false">C) Authentication, Compression, Indexing, Duplication</button>
+  <button class="quiz-option" data-correct="true">D) Atomicity, Consistency, Isolation, Durability &mdash; both Durability (don&rsquo;t lose history) and Consistency (valid session state) are critical</button>
+  <p class="quiz-explanation"><strong>D</strong> is correct. Losing conversation history (durability failure) means parents repeat intake info. Invalid state (consistency failure) means orphaned predicates or sessions without users. For healthcare, both matter. Atomicity ensures multi-step operations (save message + extract predicates + update session phase) either fully complete or fully roll back.</p>
+</div>
+
+<div class="exercise">
+  <div class="exercise-header">
+    <span class="exercise-badge">H5</span>
+    <span class="exercise-title">SQL for Conversation Analytics</span>
+  </div>
+  <p>Write SQL queries for analyzing chatbot conversation data. Given these tables:</p>
+  <pre><code class="language-sql">-- sessions(session_id, user_id, created_at, phase, ended_at)
+-- messages(message_id, session_id, role, content, created_at)
+-- predicates(pred_id, session_id, name, args_json, extracted_at)
+
+-- Q1: Average number of messages per session
+
+-- Q2: Top 5 most frequently extracted predicate names
+
+-- Q3: All sessions where child_age predicate has value &gt; 10
+--     (args_json stored like '[7]' or '[12]')
+
+-- Q4: Users with sessions stuck in "intake" for &gt; 10 messages
+--     (potential UX issue)</code></pre>
+  <button class="solution-toggle">Show Solution</button>
+  <div class="solution">
+    <pre><code class="language-sql">-- Q1: Average messages per session
+SELECT AVG(msg_count) AS avg_messages_per_session
+FROM (
+    SELECT session_id, COUNT(*) AS msg_count
+    FROM messages
+    GROUP BY session_id
+) sub;
+
+-- Q2: Top 5 most common predicates
+SELECT name, COUNT(*) AS frequency
+FROM predicates
+GROUP BY name
+ORDER BY frequency DESC
+LIMIT 5;
+
+-- Q3: Sessions with child_age &gt; 10
+SELECT DISTINCT s.*
+FROM sessions s
+JOIN predicates p ON s.session_id = p.session_id
+WHERE p.name = 'child_age'
+  AND CAST(
+    REPLACE(REPLACE(p.args_json, '[', ''), ']', '')
+    AS INTEGER
+  ) &gt; 10;
+
+-- Q4: Sessions stuck in intake with many messages
+SELECT s.user_id, s.session_id, COUNT(m.message_id) AS msg_count
+FROM sessions s
+JOIN messages m ON s.session_id = m.session_id
+WHERE s.phase = 'intake'
+GROUP BY s.user_id, s.session_id
+HAVING COUNT(m.message_id) &gt; 10;</code></pre>
+    <p>Q1 uses a subquery for per-session counts then averages. Q2 is a simple GROUP BY for frequency analysis &mdash; useful for understanding what parents talk about most. Q3 extracts integers from JSON (in production, use <code>json_extract</code> or PostgreSQL&rsquo;s <code>-&gt;&gt;</code> operator instead of REPLACE). Q4 identifies UX problems &mdash; if intake takes 10+ messages, the system might not be extracting predicates effectively.</p>
+  </div>
+</div>
+
   <div class="nav-buttons">
     <span class="nav-btn nav-prev">&larr; Previous</span>
     <span class="nav-btn nav-next">Next: Interview Prep &rarr;</span>

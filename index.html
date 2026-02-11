@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learn Logic Programming</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button id="menu-toggle">&#9776;</button>
+
+<div id="progress-bar"><div id="progress-fill"></div></div>
+
+<aside id="sidebar">
+  <div class="logo">
+    <h1>Learn Logic Programming</h1>
+    <p>From Formal Logic to ASP</p>
+  </div>
+  <nav>
+    <div class="ch-group">
+      <div class="ch-label">Start Here</div>
+      <a href="#ch0" data-section="ch0">Overview &amp; Roadmap</a>
+    </div>
+    <div class="ch-group">
+      <div class="ch-label">Foundations</div>
+      <a href="#ch1" data-section="ch1">1. Logic to Code</a>
+      <a href="#ch2" data-section="ch2">2. Prolog Basics</a>
+      <a href="#ch3" data-section="ch3">3. Prolog Deep Dive</a>
+    </div>
+    <div class="ch-group">
+      <div class="ch-label">Answer Set Programming</div>
+      <a href="#ch4" data-section="ch4">4. Why ASP Exists</a>
+      <a href="#ch5" data-section="ch5">5. ASP Core Concepts</a>
+      <a href="#ch6" data-section="ch6">6. ASP in Practice</a>
+    </div>
+    <div class="ch-group">
+      <div class="ch-label">s(CASP) &amp; Applications</div>
+      <a href="#ch7" data-section="ch7">7. s(CASP)</a>
+      <a href="#ch8" data-section="ch8">8. STAR Framework</a>
+      <a href="#ch9" data-section="ch9">9. Healthcare Chatbots</a>
+    </div>
+    <div class="ch-group">
+      <div class="ch-label">Practice</div>
+      <a href="#ch10" data-section="ch10">10. Exercises</a>
+      <a href="#ch11" data-section="ch11">11. Interview Prep</a>
+      <a href="#ref" data-section="ref">Reference &amp; Glossary</a>
+    </div>
+  </nav>
+</aside>
+
+<main id="main">
+
+<!-- ============================================ -->
+<!-- CHAPTER 0: OVERVIEW -->
+<!-- ============================================ -->
+<section id="ch0">
+  <h2><span class="ch-num">0.</span> Overview &amp; Roadmap</h2>
+  <p class="ch-subtitle">What you're learning, why, and how this site is structured.</p>
+
+  <h3>The Goal</h3>
+  <p>You're interviewing for an <strong>AI Software Engineer</strong> role at <strong>FirstThen</strong>, a startup building a clinician-bounded ADHD coaching chatbot. Their core architecture uses <strong>LLMs + Answer Set Programming (ASP)</strong> to keep conversations safe and explainable.</p>
+  <p>You need to learn <strong>logic programming</strong> and <strong>ASP</strong> well enough to discuss the architecture intelligently, write basic programs, and demonstrate you can ramp up fast.</p>
+
+  <h3>Your Starting Point</h3>
+  <ul>
+    <li>Formal logic from philosophy courses (propositional, predicate logic, proof techniques)</li>
+    <li>Discrete math (sets, relations, functions, induction)</li>
+    <li>Strong programming background (Python, Java, C++, etc.)</li>
+  </ul>
+
+  <div class="callout key">
+    <div class="callout-title">Good News</div>
+    <p>Logic programming is <em>executable formal logic</em>. Your background maps directly. The syntax is new; the concepts are not.</p>
+  </div>
+
+  <h3>Learning Path</h3>
+  <table>
+    <tr><th>Chapter</th><th>Topic</th><th>Why It Matters</th></tr>
+    <tr><td>1</td><td>Logic to Code</td><td>Bridge your formal logic knowledge to LP syntax</td></tr>
+    <tr><td>2-3</td><td>Prolog</td><td>Foundation language; s(CASP) extends Prolog</td></tr>
+    <tr><td>4-6</td><td>Answer Set Programming</td><td>The core technology behind FirstThen</td></tr>
+    <tr><td>7</td><td>s(CASP)</td><td>Gopal Gupta's system &mdash; what FirstThen actually uses</td></tr>
+    <tr><td>8</td><td>STAR Framework</td><td>The LLM + ASP pipeline you'd be building</td></tr>
+    <tr><td>9</td><td>Healthcare Chatbots</td><td>Direct application to the role</td></tr>
+    <tr><td>10-11</td><td>Practice &amp; Interview</td><td>Exercises and expected questions</td></tr>
+  </table>
+
+  <h3>How to Use This Site</h3>
+  <p>Read chapters in order. Each has <strong>code examples</strong> you should study carefully, <strong>quizzes</strong> to check understanding, and <strong>exercises</strong> with solutions. The progress bar tracks which chapters you've visited.</p>
+
+  <div class="nav-buttons">
+    <span class="nav-btn disabled nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: Logic to Code &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 1: LOGIC TO CODE -->
+<!-- ============================================ -->
+<section id="ch1">
+  <h2><span class="ch-num">1.</span> From Formal Logic to Logic Programming</h2>
+  <p class="ch-subtitle">Everything you know about formal logic maps directly to code.</p>
+
+  <h3>The Key Mental Shift</h3>
+  <p>In <strong>imperative programming</strong>, you tell the computer <em>how</em> to solve a problem (step-by-step instructions). In <strong>logic programming</strong>, you declare <em>what</em> is true and let the solver figure out the rest.</p>
+
+  <pre><code><span class="cm">% Imperative (Python): HOW to check ancestry</span>
+<span class="cm">% def is_ancestor(person, target, tree):</span>
+<span class="cm">%     if person == target: return True</span>
+<span class="cm">%     for child in tree[person]:</span>
+<span class="cm">%         if is_ancestor(child, target, tree): ...</span>
+
+<span class="cm">% Logic programming: WHAT is true about ancestry</span>
+<span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">bob</span>).
+<span class="fn">parent</span>(<span class="st">bob</span>, <span class="st">ann</span>).
+
+<span class="fn">ancestor</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">X</span>, <span class="var">Y</span>).
+<span class="fn">ancestor</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">X</span>, <span class="var">Z</span>), <span class="fn">ancestor</span>(<span class="var">Z</span>, <span class="var">Y</span>).
+
+<span class="cm">% Query: ?- ancestor(tom, ann).  --&gt; true</span></code></pre>
+
+  <p>You stated facts and rules. The solver derived the answer. No loops, no state management, no manual recursion handling.</p>
+
+  <h3>The Direct Mapping</h3>
+  <p>Here's how your formal logic knowledge translates to logic programming syntax:</p>
+
+  <table>
+    <tr><th>Formal Logic</th><th>Logic Programming</th><th>Read As</th></tr>
+    <tr>
+      <td><code>P(a)</code> (ground fact)</td>
+      <td><code>p(a).</code></td>
+      <td>"a has property p"</td>
+    </tr>
+    <tr>
+      <td><code>&forall;x: P(x) &rarr; Q(x)</code></td>
+      <td><code>q(X) :- p(X).</code></td>
+      <td>"Q holds if P holds"</td>
+    </tr>
+    <tr>
+      <td><code>P(a) &and; P(b)</code></td>
+      <td><code>p(a). p(b).</code></td>
+      <td>Two separate facts</td>
+    </tr>
+    <tr>
+      <td><code>&exist;x: P(x) &and; Q(x)</code></td>
+      <td><code>?- p(X), q(X).</code></td>
+      <td>Query: "find X where both hold"</td>
+    </tr>
+    <tr>
+      <td><code>&not;P(x)</code></td>
+      <td><code>not p(X)</code></td>
+      <td>"P cannot be proven" (subtle!)</td>
+    </tr>
+    <tr>
+      <td><code>P(x) &rarr; &perp;</code></td>
+      <td><code>:- p(X).</code></td>
+      <td>"P must never be true" (constraint)</td>
+    </tr>
+    <tr>
+      <td><code>A &or; B</code></td>
+      <td><code>{a ; b} = 1.</code></td>
+      <td>"Exactly one of A or B" (ASP)</td>
+    </tr>
+  </table>
+
+  <h3>Syntax Rules</h3>
+  <p>These apply across Prolog and ASP:</p>
+  <ul>
+    <li><strong>Constants</strong> (specific things) start <strong>lowercase</strong>: <code>tom</code>, <code>adhd</code>, <code>homework</code></li>
+    <li><strong>Variables</strong> (unknowns) start <strong>uppercase</strong>: <code>X</code>, <code>Y</code>, <code>Person</code>, <code>Who</code></li>
+    <li><strong>Facts</strong> end with a <strong>period</strong>: <code>parent(tom, bob).</code></li>
+    <li><strong>Rules</strong> use <code>:-</code> meaning "if": <code>head :- body.</code></li>
+    <li><strong>Comma</strong> means <strong>AND</strong>: <code>a, b</code> = "a and b"</li>
+    <li><strong>Comments</strong> use <code>%</code>: <code>% this is a comment</code></li>
+    <li><strong>Underscore <code>_</code></strong> is an anonymous variable: "I don't care what this is"</li>
+  </ul>
+
+  <pre><code><span class="cm">% FACTS: unconditionally true</span>
+<span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">bob</span>).          <span class="cm">% Tom is Bob's parent</span>
+<span class="fn">age</span>(<span class="st">bob</span>, <span class="num">7</span>).               <span class="cm">% Bob is 7 years old</span>
+<span class="fn">diagnosed</span>(<span class="st">bob</span>, <span class="st">adhd</span>).      <span class="cm">% Bob has ADHD</span>
+
+<span class="cm">% RULES: conditional truths</span>
+<span class="fn">grandparent</span>(<span class="var">X</span>, <span class="var">Z</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">X</span>, <span class="var">Y</span>), <span class="fn">parent</span>(<span class="var">Y</span>, <span class="var">Z</span>).
+<span class="cm">% X is grandparent of Z IF X is parent of some Y AND Y is parent of Z</span>
+
+<span class="cm">% QUERIES: what you want to know</span>
+<span class="cm">% ?- grandparent(tom, Who).   "Who is Tom a grandparent of?"</span>
+<span class="cm">% ?- parent(_, bob).          "Does Bob have a parent?" (don't care who)</span></code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">Key Insight</div>
+    <p>The rule <code>grandparent(X, Z) :- parent(X, Y), parent(Y, Z).</code> is literally the formula <code>&forall;X,Y,Z: parent(X,Y) &and; parent(Y,Z) &rarr; grandparent(X,Z)</code> written in logic programming syntax. Your discrete math intuition applies directly.</p>
+  </div>
+
+  <h3>Predicates: The Building Blocks</h3>
+  <p>A <strong>predicate</strong> is a named relation with a fixed number of arguments (its <em>arity</em>):</p>
+  <ul>
+    <li><code>parent(tom, bob)</code> &mdash; predicate <code>parent/2</code> (name/arity)</li>
+    <li><code>diagnosed(bob, adhd)</code> &mdash; predicate <code>diagnosed/2</code></li>
+    <li><code>happy(bob)</code> &mdash; predicate <code>happy/1</code></li>
+  </ul>
+  <p>Predicates are the vocabulary of your logic program. In the FirstThen context, the LLM's job is to <em>extract predicates</em> from natural language: turning "My 7-year-old son Max has ADHD" into <code>child_age(max, 7). diagnosed(max, adhd).</code></p>
+
+  <div class="quiz">
+    <p class="quiz-question">What does the rule <code>needs_help(X) :- student(X), not passing(X).</code> mean?</p>
+    <button class="quiz-option" data-correct="false">X needs help if X is a student who is passing</button>
+    <button class="quiz-option" data-correct="true">X needs help if X is a student and we cannot prove X is passing</button>
+    <button class="quiz-option" data-correct="false">X needs help only if X is not a student</button>
+    <p class="quiz-explanation">Correct! The <code>not</code> here is "negation as failure" &mdash; it means "we cannot prove passing(X) is true." This is the Closed World Assumption: if something isn't stated or derivable, it's assumed false.</p>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: Prolog Basics &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 2: PROLOG BASICS -->
+<!-- ============================================ -->
+<section id="ch2">
+  <h2><span class="ch-num">2.</span> Prolog Basics</h2>
+  <p class="ch-subtitle">The original logic programming language and foundation for s(CASP).</p>
+
+  <h3>Why Learn Prolog?</h3>
+  <p>Prolog (1972) matters because:</p>
+  <ol>
+    <li><strong>s(CASP) runs inside SWI-Prolog</strong> and extends Prolog syntax</li>
+    <li>ASP evolved as a response to Prolog's limitations (you need to understand both)</li>
+    <li>The execution model (unification + backtracking) is the foundation of all logic programming</li>
+  </ol>
+
+  <h3>Unification: How Logic Programming "Computes"</h3>
+  <p>Unification is the core mechanism. When Prolog tries to match a query against a rule, it <strong>unifies</strong> terms by finding variable bindings that make them identical:</p>
+
+  <pre><code><span class="cm">% Can these unify?</span>
+<span class="fn">parent</span>(<span class="st">tom</span>, <span class="var">X</span>)   =   <span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">bob</span>)
+<span class="cm">% YES: X = bob</span>
+
+<span class="fn">parent</span>(<span class="var">X</span>, <span class="var">Y</span>)     =   <span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">bob</span>)
+<span class="cm">% YES: X = tom, Y = bob</span>
+
+<span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">bob</span>)  =   <span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">ann</span>)
+<span class="cm">% NO: bob ≠ ann</span>
+
+<span class="fn">parent</span>(<span class="var">X</span>, <span class="var">X</span>)     =   <span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">bob</span>)
+<span class="cm">% NO: X can't be both tom and bob</span>
+
+<span class="fn">parent</span>(<span class="var">X</span>, <span class="var">X</span>)     =   <span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">tom</span>)
+<span class="cm">% YES: X = tom</span></code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">Think of it this way</div>
+    <p>Unification is like solving a system of equations. <code>f(X, b) = f(a, Y)</code> gives you <code>X=a, Y=b</code>. Prolog does this automatically, constantly, as its primary computation mechanism.</p>
+  </div>
+
+  <h3>SLD Resolution: How Prolog Executes</h3>
+  <p>When you query <code>?- ancestor(tom, ann).</code>, Prolog performs <strong>top-down, depth-first search with backtracking</strong>:</p>
+
+  <pre><code><span class="fn">parent</span>(<span class="st">tom</span>, <span class="st">bob</span>).
+<span class="fn">parent</span>(<span class="st">bob</span>, <span class="st">ann</span>).
+
+<span class="fn">ancestor</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">X</span>, <span class="var">Y</span>).                  <span class="cm">% Rule 1</span>
+<span class="fn">ancestor</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">X</span>, <span class="var">Z</span>), <span class="fn">ancestor</span>(<span class="var">Z</span>, <span class="var">Y</span>). <span class="cm">% Rule 2</span></code></pre>
+
+  <div class="diagram">Query: ancestor(tom, ann)
+  |
+  +--> Try Rule 1: ancestor(X,Y) :- parent(X,Y)
+  |    Unify: X=tom, Y=ann
+  |    Need: parent(tom, ann)
+  |    FAIL (no such fact)
+  |
+  +--> Try Rule 2: ancestor(X,Y) :- parent(X,Z), ancestor(Z,Y)
+       Unify: X=tom, Y=ann
+       Need: parent(tom, Z)
+       SUCCESS: Z=bob  (from fact parent(tom,bob))
+       |
+       Now need: ancestor(bob, ann)
+       |
+       +--> Try Rule 1: ancestor(X,Y) :- parent(X,Y)
+            Unify: X=bob, Y=ann
+            Need: parent(bob, ann)
+            SUCCESS! (fact exists)
+
+RESULT: true</div>
+
+  <p>This is exactly like a <strong>proof search</strong> in natural deduction, but automated. Prolog tries rules top-to-bottom, goals left-to-right, and backtracks on failure.</p>
+
+  <h3>Lists</h3>
+  <p>Prolog lists are fundamental. They use <code>[Head|Tail]</code> pattern matching:</p>
+
+  <pre><code><span class="cm">% List syntax</span>
+[<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]              <span class="cm">% A list of three elements</span>
+[<span class="st">a</span> | [<span class="st">b</span>, <span class="st">c</span>]]          <span class="cm">% Same as [a, b, c]</span>
+[<span class="var">H</span> | <span class="var">T</span>]                  <span class="cm">% H = first element, T = rest of list</span>
+[]                       <span class="cm">% Empty list</span>
+
+<span class="cm">% Length of a list</span>
+<span class="fn">len</span>([], <span class="num">0</span>).
+<span class="fn">len</span>([<span class="var">_</span>|<span class="var">T</span>], <span class="var">N</span>) <span class="op">:-</span> <span class="fn">len</span>(<span class="var">T</span>, <span class="var">N1</span>), <span class="var">N</span> <span class="op">is</span> <span class="var">N1</span> <span class="op">+</span> <span class="num">1</span>.
+
+<span class="cm">% Member of a list</span>
+<span class="fn">member</span>(<span class="var">X</span>, [<span class="var">X</span>|<span class="var">_</span>]).
+<span class="fn">member</span>(<span class="var">X</span>, [<span class="var">_</span>|<span class="var">T</span>]) <span class="op">:-</span> <span class="fn">member</span>(<span class="var">X</span>, <span class="var">T</span>).
+
+<span class="cm">% Append two lists</span>
+<span class="fn">append</span>([], <span class="var">L</span>, <span class="var">L</span>).
+<span class="fn">append</span>([<span class="var">H</span>|<span class="var">T1</span>], <span class="var">L2</span>, [<span class="var">H</span>|<span class="var">T3</span>]) <span class="op">:-</span> <span class="fn">append</span>(<span class="var">T1</span>, <span class="var">L2</span>, <span class="var">T3</span>).</code></pre>
+
+  <p>Notice how <code>member/2</code> works: "X is a member of a list if X is the head, OR X is a member of the tail." Pure logic, no iteration.</p>
+
+  <h3>Backtracking: Finding All Solutions</h3>
+  <p>Prolog doesn't just find one answer &mdash; it can find all of them through backtracking:</p>
+
+  <pre><code><span class="fn">likes</span>(<span class="st">mary</span>, <span class="st">pizza</span>).
+<span class="fn">likes</span>(<span class="st">mary</span>, <span class="st">sushi</span>).
+<span class="fn">likes</span>(<span class="st">mary</span>, <span class="st">tacos</span>).
+
+<span class="cm">% Query: ?- likes(mary, What).</span>
+<span class="cm">% Answer 1: What = pizza</span>
+<span class="cm">% Answer 2: What = sushi  (backtrack, try next fact)</span>
+<span class="cm">% Answer 3: What = tacos  (backtrack again)</span></code></pre>
+
+  <div class="quiz">
+    <p class="quiz-question">Given <code>parent(tom, bob). parent(tom, sue). parent(bob, ann).</code>, what does <code>?- parent(tom, X).</code> return?</p>
+    <button class="quiz-option" data-correct="false">X = bob only</button>
+    <button class="quiz-option" data-correct="true">X = bob, then X = sue (via backtracking)</button>
+    <button class="quiz-option" data-correct="false">X = bob, X = sue, X = ann</button>
+    <p class="quiz-explanation">Correct! Prolog finds X=bob first, and on backtracking finds X=sue. It does NOT find ann because parent(tom, ann) is not a fact.</p>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: Prolog Deep Dive &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 3: PROLOG DEEP DIVE -->
+<!-- ============================================ -->
+<section id="ch3">
+  <h2><span class="ch-num">3.</span> Prolog Deep Dive</h2>
+  <p class="ch-subtitle">Arithmetic, negation, cut, and the limitations that led to ASP.</p>
+
+  <h3>Arithmetic</h3>
+  <p>Prolog treats everything as symbolic by default. For actual computation, you need <code>is</code>:</p>
+
+  <pre><code><span class="cm">% WRONG: this tries to unify, not compute</span>
+<span class="cm">% ?- X = 2 + 3.    --&gt; X = 2+3  (a term, not 5!)</span>
+
+<span class="cm">% RIGHT: use 'is' to evaluate arithmetic</span>
+<span class="cm">% ?- X is 2 + 3.   --&gt; X = 5</span>
+
+<span class="cm">% Comparison operators</span>
+<span class="cm">% ?- 5 > 3.        --&gt; true</span>
+<span class="cm">% ?- 5 =:= 2+3.   --&gt; true (arithmetic equality)</span>
+<span class="cm">% ?- 5 == 2+3.     --&gt; false (structural equality)</span>
+
+<span class="cm">% Factorial</span>
+<span class="fn">factorial</span>(<span class="num">0</span>, <span class="num">1</span>).
+<span class="fn">factorial</span>(<span class="var">N</span>, <span class="var">F</span>) <span class="op">:-</span>
+    <span class="var">N</span> <span class="op">></span> <span class="num">0</span>,
+    <span class="var">N1</span> <span class="op">is</span> <span class="var">N</span> <span class="op">-</span> <span class="num">1</span>,
+    <span class="fn">factorial</span>(<span class="var">N1</span>, <span class="var">F1</span>),
+    <span class="var">F</span> <span class="op">is</span> <span class="var">N</span> <span class="op">*</span> <span class="var">F1</span>.</code></pre>
+
+  <h3>Negation as Failure (NAF)</h3>
+  <p>This is one of the most important concepts. Prolog's <code>not</code> (or <code>\+</code>) doesn't mean classical logical negation. It means <strong>"I cannot prove this"</strong>:</p>
+
+  <pre><code><span class="fn">bird</span>(<span class="st">tweety</span>).
+<span class="fn">bird</span>(<span class="st">tux</span>).
+<span class="fn">penguin</span>(<span class="st">tux</span>).
+
+<span class="fn">abnormal</span>(<span class="var">X</span>) <span class="op">:-</span> <span class="fn">penguin</span>(<span class="var">X</span>).
+<span class="fn">flies</span>(<span class="var">X</span>) <span class="op">:-</span> <span class="fn">bird</span>(<span class="var">X</span>), <span class="op">not</span> <span class="fn">abnormal</span>(<span class="var">X</span>).
+
+<span class="cm">% ?- flies(tweety).  --&gt; true</span>
+<span class="cm">%    (tweety is a bird, and we CAN'T prove tweety is abnormal)</span>
+
+<span class="cm">% ?- flies(tux).     --&gt; false</span>
+<span class="cm">%    (tux is a bird, but we CAN prove tux is abnormal)</span></code></pre>
+
+  <div class="callout warn">
+    <div class="callout-title">Closed World Assumption (CWA)</div>
+    <p>In logic programming, anything not stated or derivable is assumed false. If you don't say <code>penguin(tweety).</code>, then <code>penguin(tweety)</code> is false. This is different from classical logic where unknown things are simply unknown. The CWA is powerful for databases and chatbots: "If we haven't approved a topic, it's not approved."</p>
+  </div>
+
+  <h3>Prolog's Limitations</h3>
+  <p>These are the problems that motivated the creation of ASP:</p>
+
+  <h4>1. Negation is order-dependent</h4>
+  <pre><code><span class="cm">% These two programs give different results in Prolog:</span>
+
+<span class="cm">% Program A:</span>
+<span class="fn">p</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">q</span>.
+<span class="fn">q</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">p</span>.
+<span class="cm">% Prolog tries p first, can't prove q, so p succeeds.</span>
+<span class="cm">% But q :- not p would also be valid! There are TWO</span>
+<span class="cm">% consistent worlds: {p} and {q}. Prolog only finds one.</span></code></pre>
+
+  <h4>2. No genuine disjunction</h4>
+  <pre><code><span class="cm">% "Go to the opera OR stay home" -- both valid</span>
+<span class="cm">% Prolog can't naturally express this kind of choice.</span>
+<span class="cm">% ASP can: { go_opera ; stay_home } = 1.</span></code></pre>
+
+  <h4>3. Infinite loops</h4>
+  <pre><code><span class="fn">p</span> <span class="op">:-</span> <span class="fn">q</span>.
+<span class="fn">q</span> <span class="op">:-</span> <span class="fn">p</span>.
+<span class="cm">% ?- p.  --&gt; Prolog loops forever</span>
+<span class="cm">% ASP handles this: neither p nor q is in the answer set</span></code></pre>
+
+  <h4>4. No multiple models</h4>
+  <p>Prolog finds one answer path. But real problems often have multiple valid solutions (e.g., "which combination of strategies could work for this family?"). ASP computes <em>all</em> valid models.</p>
+
+  <div class="callout key">
+    <div class="callout-title">Why this matters for FirstThen</div>
+    <p>A chatbot needs to handle ambiguity (multiple valid next steps), enforce hard constraints (safety bounds), and never loop. ASP was designed precisely for these requirements.</p>
+  </div>
+
+  <h3>Practical Prolog Patterns</h3>
+  <p>Despite its limitations, Prolog patterns appear constantly in s(CASP). Know these:</p>
+
+  <pre><code><span class="cm">% Pattern 1: Accumulator (efficient recursion)</span>
+<span class="fn">sum_list</span>(<span class="var">List</span>, <span class="var">Sum</span>) <span class="op">:-</span> <span class="fn">sum_list</span>(<span class="var">List</span>, <span class="num">0</span>, <span class="var">Sum</span>).
+<span class="fn">sum_list</span>([], <span class="var">Acc</span>, <span class="var">Acc</span>).
+<span class="fn">sum_list</span>([<span class="var">H</span>|<span class="var">T</span>], <span class="var">Acc</span>, <span class="var">Sum</span>) <span class="op">:-</span>
+    <span class="var">NewAcc</span> <span class="op">is</span> <span class="var">Acc</span> <span class="op">+</span> <span class="var">H</span>,
+    <span class="fn">sum_list</span>(<span class="var">T</span>, <span class="var">NewAcc</span>, <span class="var">Sum</span>).
+
+<span class="cm">% Pattern 2: Generate and test</span>
+<span class="fn">valid_pair</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span>
+    <span class="fn">candidate</span>(<span class="var">X</span>),       <span class="cm">% generate</span>
+    <span class="fn">candidate</span>(<span class="var">Y</span>),       <span class="cm">% generate</span>
+    <span class="var">X</span> <span class="op">\=</span> <span class="var">Y</span>,             <span class="cm">% test</span>
+    <span class="fn">compatible</span>(<span class="var">X</span>, <span class="var">Y</span>).  <span class="cm">% test</span>
+
+<span class="cm">% Pattern 3: If-then-else via cuts (less common in ASP)</span>
+<span class="fn">classify</span>(<span class="var">Age</span>, <span class="st">child</span>)  <span class="op">:-</span> <span class="var">Age</span> <span class="op">&lt;</span> <span class="num">12</span>, <span class="op">!</span>.
+<span class="fn">classify</span>(<span class="var">Age</span>, <span class="st">teen</span>)   <span class="op">:-</span> <span class="var">Age</span> <span class="op">&lt;</span> <span class="num">18</span>, <span class="op">!</span>.
+<span class="fn">classify</span>(<span class="var">_</span>, <span class="st">adult</span>).</code></pre>
+
+  <div class="exercise">
+    <div class="exercise-header">
+      <span class="exercise-badge">Exercise</span>
+      <span class="exercise-title">Write a Prolog program</span>
+    </div>
+    <p>Define a family tree with at least 3 generations. Write rules for <code>sibling/2</code>, <code>uncle/2</code>, and <code>cousin/2</code>. Use only <code>parent/2</code> and <code>male/1</code>/<code>female/1</code> as base facts.</p>
+    <button class="solution-toggle">Show Solution</button>
+    <div class="solution">
+      <pre><code><span class="cm">% Facts</span>
+<span class="fn">parent</span>(<span class="st">alice</span>, <span class="st">bob</span>).   <span class="fn">parent</span>(<span class="st">alice</span>, <span class="st">carol</span>).
+<span class="fn">parent</span>(<span class="st">bob</span>, <span class="st">dave</span>).    <span class="fn">parent</span>(<span class="st">bob</span>, <span class="st">eve</span>).
+<span class="fn">parent</span>(<span class="st">carol</span>, <span class="st">frank</span>).
+<span class="fn">male</span>(<span class="st">bob</span>). <span class="fn">male</span>(<span class="st">dave</span>). <span class="fn">male</span>(<span class="st">frank</span>).
+<span class="fn">female</span>(<span class="st">alice</span>). <span class="fn">female</span>(<span class="st">carol</span>). <span class="fn">female</span>(<span class="st">eve</span>).
+
+<span class="cm">% Rules</span>
+<span class="fn">sibling</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">P</span>, <span class="var">X</span>), <span class="fn">parent</span>(<span class="var">P</span>, <span class="var">Y</span>), <span class="var">X</span> <span class="op">\=</span> <span class="var">Y</span>.
+<span class="fn">uncle</span>(<span class="var">U</span>, <span class="var">X</span>) <span class="op">:-</span> <span class="fn">male</span>(<span class="var">U</span>), <span class="fn">sibling</span>(<span class="var">U</span>, <span class="var">P</span>), <span class="fn">parent</span>(<span class="var">P</span>, <span class="var">X</span>).
+<span class="fn">cousin</span>(<span class="var">X</span>, <span class="var">Y</span>) <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">PX</span>, <span class="var">X</span>), <span class="fn">parent</span>(<span class="var">PY</span>, <span class="var">Y</span>), <span class="fn">sibling</span>(<span class="var">PX</span>, <span class="var">PY</span>).
+
+<span class="cm">% ?- uncle(bob, frank).   --&gt; true (bob is carol's sibling, carol is frank's parent)</span>
+<span class="cm">% ?- cousin(dave, frank). --&gt; true (dave's parent bob is sibling of frank's parent carol)</span></code></pre>
+    </div>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: Why ASP Exists &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 4: WHY ASP EXISTS -->
+<!-- ============================================ -->
+<section id="ch4">
+  <h2><span class="ch-num">4.</span> Why ASP Exists</h2>
+  <p class="ch-subtitle">From Prolog's limitations to a fundamentally different approach.</p>
+
+  <h3>The Paradigm Shift</h3>
+  <p>The key difference between Prolog and ASP:</p>
+
+  <div class="callout key">
+    <div class="callout-title">Two Different Questions</div>
+    <p><strong>Prolog</strong> asks: "Can I prove this specific query is true?" (top-down, one answer at a time)<br>
+    <strong>ASP</strong> asks: "What are ALL consistent models where my rules hold?" (bottom-up, all answers at once)</p>
+  </div>
+
+  <h3>What Is an Answer Set?</h3>
+  <p>An <strong>answer set</strong> (also called a <strong>stable model</strong>) is a set of ground atoms that:</p>
+  <ol>
+    <li><strong>Consistent</strong> &mdash; no contradictions</li>
+    <li><strong>Supported</strong> &mdash; every atom has a reason to be true (a rule that derives it)</li>
+    <li><strong>Minimal</strong> &mdash; nothing extra that isn't required</li>
+  </ol>
+
+  <p>Think of each answer set as a <strong>"possible world"</strong> that satisfies all your rules and constraints.</p>
+
+  <pre><code><span class="cm">% Simple program:</span>
+<span class="fn">bird</span>(<span class="st">tweety</span>).
+<span class="fn">penguin</span>(<span class="st">tux</span>).
+<span class="fn">bird</span>(<span class="st">tux</span>).
+
+<span class="fn">abnormal</span>(<span class="var">X</span>) <span class="op">:-</span> <span class="fn">penguin</span>(<span class="var">X</span>).
+<span class="fn">flies</span>(<span class="var">X</span>) <span class="op">:-</span> <span class="fn">bird</span>(<span class="var">X</span>), <span class="op">not</span> <span class="fn">abnormal</span>(<span class="var">X</span>).
+
+<span class="cm">% The UNIQUE answer set:</span>
+<span class="cm">% { bird(tweety), penguin(tux), bird(tux),</span>
+<span class="cm">%   abnormal(tux), flies(tweety) }</span>
+<span class="cm">%</span>
+<span class="cm">% flies(tux) is NOT in the set.</span>
+<span class="cm">% tux is abnormal, so "not abnormal(tux)" fails.</span></code></pre>
+
+  <h3>How ASP Solves Prolog's Problems</h3>
+
+  <h4>Problem 1: Multiple valid worlds</h4>
+  <pre><code><span class="cm">% Prolog: p :- not q. q :- not p.  --&gt; only finds {p}</span>
+
+<span class="cm">% ASP: Same program, finds BOTH answer sets:</span>
+<span class="fn">p</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">q</span>.
+<span class="fn">q</span> <span class="op">:-</span> <span class="op">not</span> <span class="fn">p</span>.
+
+<span class="cm">% Answer set 1: { p }  (q is false, so "not q" holds, p derived)</span>
+<span class="cm">% Answer set 2: { q }  (p is false, so "not p" holds, q derived)</span></code></pre>
+
+  <h4>Problem 2: Loops</h4>
+  <pre><code><span class="fn">p</span> <span class="op">:-</span> <span class="fn">q</span>.
+<span class="fn">q</span> <span class="op">:-</span> <span class="fn">p</span>.
+
+<span class="cm">% Prolog: infinite loop</span>
+<span class="cm">% ASP: Answer set = {} (empty set)</span>
+<span class="cm">% Neither p nor q has independent support, so neither is in any model.</span></code></pre>
+
+  <h4>Problem 3: Genuine choice</h4>
+  <pre><code><span class="cm">% "Choose to go to the opera or stay home"</span>
+{ <span class="fn">go_opera</span> ; <span class="fn">stay_home</span> } = <span class="num">1</span>.
+
+<span class="cm">% Answer set 1: { go_opera }</span>
+<span class="cm">% Answer set 2: { stay_home }</span>
+
+<span class="cm">% Both are valid. The solver enumerates all possibilities.</span></code></pre>
+
+  <h3>The Bottom-Up Approach</h3>
+  <p>Traditional ASP solvers (like Clingo) work in two phases:</p>
+  <ol>
+    <li><strong>Grounding:</strong> Replace all variables with concrete values to create a propositional program</li>
+    <li><strong>Solving:</strong> Use SAT-solver techniques to find all stable models</li>
+  </ol>
+
+  <div class="diagram">Program:                          Grounded:
+bird(tweety).                     bird(tweety).
+bird(tux).                        bird(tux).
+penguin(tux).                     penguin(tux).
+abnormal(X) :- penguin(X).   --> abnormal(tweety) :- penguin(tweety).
+flies(X) :- bird(X),             abnormal(tux) :- penguin(tux).
+             not abnormal(X).     flies(tweety) :- bird(tweety),
+                                                   not abnormal(tweety).
+                                  flies(tux) :- bird(tux),
+                                                not abnormal(tux).
+
+                         Then SAT-solve for stable models.</div>
+
+  <p>This grounding step is why traditional ASP can struggle with large domains. It's also why s(CASP) was invented (Chapter 7) &mdash; it skips grounding entirely.</p>
+
+  <div class="quiz">
+    <p class="quiz-question">Given the program <code>a :- not b. b :- not a. c :- a.</code>, what are the answer sets?</p>
+    <button class="quiz-option" data-correct="true">{a, c} and {b}</button>
+    <button class="quiz-option" data-correct="false">{a, b, c}</button>
+    <button class="quiz-option" data-correct="false">{a, c} only</button>
+    <button class="quiz-option" data-correct="false">{} (empty)</button>
+    <p class="quiz-explanation">Correct! In one world, a is true (because b can't be proven), and c follows from a. In the other world, b is true (because a can't be proven), and c has no support so it's excluded.</p>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: ASP Core Concepts &rarr;</span>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CHAPTER 5: ASP CORE CONCEPTS -->
+<!-- ============================================ -->
+<section id="ch5">
+  <h2><span class="ch-num">5.</span> ASP Core Concepts</h2>
+  <p class="ch-subtitle">Choice rules, integrity constraints, optimization, and the patterns you need.</p>
+
+  <h3>1. Choice Rules</h3>
+  <p>Choice rules let you express nondeterministic decisions. The solver explores all valid combinations:</p>
+
+  <pre><code><span class="cm">% "Exactly 1: the child is calm or agitated"</span>
+{ <span class="fn">calm</span>(<span class="var">C</span>) ; <span class="fn">agitated</span>(<span class="var">C</span>) } = <span class="num">1</span> <span class="op">:-</span> <span class="fn">child</span>(<span class="var">C</span>).
+
+<span class="cm">% "Between 1 and 3 strategies from the set of all strategies"</span>
+<span class="num">1</span> { <span class="fn">try</span>(<span class="var">P</span>, <span class="var">S</span>) : <span class="fn">strategy</span>(<span class="var">S</span>) } <span class="num">3</span> <span class="op">:-</span> <span class="fn">parent</span>(<span class="var">P</span>).
+
+<span class="cm">% "At least 1 topic must be active"</span>
+<span class="num">1</span> { <span class="fn">active_topic</span>(<span class="var">T</span>) : <span class="fn">topic</span>(<span class="var">T</span>) }.
+
+<span class="cm">% "Maybe assign a strategy, maybe not" (0 or 1)</span>
+{ <span class="fn">assign</span>(<span class="var">S</span>) } <span class="op">:-</span> <span class="fn">strategy</span>(<span class="var">S</span>).</code></pre>
+
+  <p>The syntax <code>L { atoms } U</code> means "at least L, at most U of these atoms can be true." The colon <code>:</code> means "for each" (conditional set).</p>
+
+  <h3>2. Integrity Constraints (Guardrails)</h3>
+  <p>This is the most important ASP concept for FirstThen. Constraints are <strong>headless rules</strong> that eliminate invalid answer sets:</p>
+
+  <pre><code><span class="cm">% Syntax: :- body.   "It is IMPOSSIBLE for this body to be true"</span>
+
+<span class="cm">% Safety constraints for a healthcare chatbot:</span>
+
+<span class="cm">% Never recommend medication</span>
+<span class="op">:-</span> <span class="fn">recommend</span>(<span class="var">X</span>), <span class="fn">medication</span>(<span class="var">X</span>).
+
+<span class="cm">% Never provide a diagnosis</span>
+<span class="op">:-</span> <span class="fn">action</span>(<span class="st">diagnose</span>).
+
+<span class="cm">% Only discuss approved topics</span>
+<span class="op">:-</span> <span class="fn">discusses</span>(<span class="var">T</span>), <span class="op">not</span> <span class="fn">approved_topic</span>(<span class="var">T</span>).
+
+<span class="cm">% A child cannot be calm and in meltdown simultaneously</span>
+<span class="op">:-</span> <span class="fn">calm</span>(<span class="var">C</span>), <span class="fn">meltdown</span>(<span class="var">C</span>).
+
+<span class="cm">% If crisis detected, MUST refer to professional</span>
+<span class="op">:-</span> <span class="fn">crisis_detected</span>, <span class="op">not</span> <span class="fn">action</span>(<span class="st">refer_professional</span>).
+
+<span class="cm">% Every strategy session must include action steps</span>
+<span class="op">:-</span> <span class="fn">phase</span>(<span class="st">strategy</span>), <span class="op">not</span> <span class="fn">has_action_steps</span>.</code></pre>
+
+  <div class="callout danger">
+    <div class="callout-title">Why This Is Better Than Prompt Engineering</div>
+    <p>When you write <code>:- recommend(X), medication(X).</code>, any answer set that contains a medication recommendation is <strong>mathematically eliminated</strong>. The system cannot produce it. Period. Compare this to telling an LLM "don't recommend medications" in a prompt &mdash; which can be bypassed with jailbreaks. ASP constraints are formal guarantees, not suggestions.</p>
+  </div>
+
+  <h3>3. Normal Rules</h3>
+  <p>Standard rules for deriving new knowledge:</p>
+
+  <pre><code><span class="cm">% Deriving strategy recommendations from challenges</span>
+<span class="fn">suggest</span>(<span class="st">visual_schedule</span>) <span class="op">:-</span> <span class="fn">challenge</span>(<span class="var">_</span>, <span class="st">homework_avoidance</span>).
+<span class="fn">suggest</span>(<span class="st">first_then_board</span>) <span class="op">:-</span> <span class="fn">challenge</span>(<span class="var">_</span>, <span class="st">homework_avoidance</span>).
+<span class="fn">suggest</span>(<span class="st">countdown</span>)        <span class="op">:-</span> <span class="fn">challenge</span>(<span class="var">_</span>, <span class="st">bedtime_resistance</span>).
+<span class="fn">suggest</span>(<span class="st">calm_corner</span>)      <span class="op">:-</span> <span class="fn">challenge</span>(<span class="var">_</span>, <span class="st">emotional_dysregulation</span>).
+
+<span class="cm">% Don't suggest failed strategies</span>
+<span class="op">:-</span> <span class="fn">suggest</span>(<span class="var">S</span>), <span class="fn">tried</span>(<span class="var">_</span>, <span class="var">S</span>), <span class="fn">outcome</span>(<span class="var">S</span>, <span class="st">negative</span>).
+
+<span class="cm">% Conversation state transitions</span>
+<span class="fn">intake_complete</span> <span class="op">:-</span>
+    <span class="fn">has_child_age</span>,
+    <span class="fn">has_challenge</span>,
+    <span class="fn">has_diagnosis</span>.
+
+<span class="fn">current_phase</span>(<span class="st">strategy</span>) <span class="op">:-</span> <span class="fn">intake_complete</span>.
+<span class="fn">current_phase</span>(<span class="st">intake</span>)   <span class="op">:-</span> <span class="op">not</span> <span class="fn">intake_complete</span>.</code></pre>
+
+  <h3>4. Show Directives</h3>
+  <p>Control which atoms appear in the output:</p>
+
+  <pre><code><span class="cm">% Only show suggestions and current phase</span>
+<span class="kw">#show</span> <span class="fn">suggest</span>/<span class="num">1</span>.
+<span class="kw">#show</span> <span class="fn">current_phase</span>/<span class="num">1</span>.
+
+<span class="cm">% Without #show, Clingo outputs ALL atoms in the answer set.</span>
+<span class="cm">% With #show, only the specified predicates appear.</span></code></pre>
+
+  <h3>5. Optimization</h3>
+  <p>ASP can find optimal solutions, not just valid ones:</p>
+
+  <pre><code><span class="cm">% Prefer strategies the family hasn't tried before</span>
+<span class="fn">novel</span>(<span class="var">S</span>) <span class="op">:-</span> <span class="fn">suggest</span>(<span class="var">S</span>), <span class="op">not</span> <span class="fn">tried</span>(<span class="var">_</span>, <span class="var">S</span>).
+
+<span class="cm">% Maximize novel suggestions</span>
+<span class="kw">#maximize</span> { <span class="num">1</span>,<span class="var">S</span> : <span class="fn">novel</span>(<span class="var">S</span>) }.
+
+<span class="cm">% Minimize overall number of suggestions (keep it focused)</span>
+<span class="kw">#minimize</span> { <span class="num">1</span>,<span class="var">S</span> : <span class="fn">suggest</span>(<span class="var">S</span>) }.</code></pre>
+
+  <h3>Complete Example: Strategy Recommender</h3>
+  <pre><code><span class="cm">% === DOMAIN KNOWLEDGE ===</span>
+<span class="fn">strategy</span>(<span class="st">visual_schedule</span>). <span class="fn">strategy</span>(<span class="st">first_then</span>). <span class="fn">strategy</span>(<span class="st">timer</span>).
+<span class="fn">strategy</span>(<span class="st">countdown</span>). <span class="fn">strategy</span>(<span class="st">calm_corner</span>). <span class="fn">strategy</span>(<span class="st">token_reward</span>).
+
+<span class="fn">for_challenge</span>(<span class="st">visual_schedule</span>, <span class="st">homework</span>).
+<span class="fn">for_challenge</span>(<span class="st">first_then</span>, <span class="st">homework</span>).
+<span class="fn">for_challenge</span>(<span class="st">timer</span>, <span class="st">homework</span>).
+<span class="fn">for_challenge</span>(<span class="st">countdown</span>, <span class="st">transitions</span>).
+<span class="fn">for_challenge</span>(<span class="st">calm_corner</span>, <span class="st">meltdowns</span>).
+<span class="fn">for_challenge</span>(<span class="st">token_reward</span>, <span class="st">homework</span>).
+<span class="fn">for_challenge</span>(<span class="st">token_reward</span>, <span class="st">transitions</span>).
+
+<span class="cm">% === FAMILY CONTEXT (from predicate extraction) ===</span>
+<span class="fn">child</span>(<span class="st">max</span>). <span class="fn">child_age</span>(<span class="st">max</span>, <span class="num">7</span>). <span class="fn">diagnosed</span>(<span class="st">max</span>, <span class="st">adhd</span>).
+<span class="fn">challenge</span>(<span class="st">max</span>, <span class="st">homework</span>).
+<span class="fn">tried</span>(<span class="st">max</span>, <span class="st">timer</span>). <span class="fn">outcome</span>(<span class="st">timer</span>, <span class="st">negative</span>).
+
+<span class="cm">% === RECOMMENDATION LOGIC ===</span>
+<span class="fn">applicable</span>(<span class="var">S</span>) <span class="op">:-</span> <span class="fn">strategy</span>(<span class="var">S</span>), <span class="fn">challenge</span>(<span class="var">_</span>, <span class="var">C</span>), <span class="fn">for_challenge</span>(<span class="var">S</span>, <span class="var">C</span>).
+<span class="fn">blocked</span>(<span class="var">S</span>)     <span class="op">:-</span> <span class="fn">tried</span>(<span class="var">_</span>, <span class="var">S</span>), <span class="fn">outcome</span>(<span class="var">S</span>, <span class="st">negative</span>).
+<span class="fn">recommend</span>(<span class="var">S</span>)   <span class="op">:-</span> <span class="fn">applicable</span>(<span class="var">S</span>), <span class="op">not</span> <span class="fn">blocked</span>(<span class="var">S</span>).
+
+<span class="cm">% === SAFETY ===</span>
+<span class="op">:-</span> <span class="fn">recommend</span>(<span class="var">S</span>), <span class="fn">medication</span>(<span class="var">S</span>).
+
+<span class="kw">#show</span> <span class="fn">recommend</span>/<span class="num">1</span>.
+
+<span class="cm">% Output: recommend(visual_schedule) recommend(first_then)</span>
+<span class="cm">%         recommend(token_reward)</span>
+<span class="cm">% Note: timer is NOT recommended (tried, negative outcome)</span></code></pre>
+
+  <div class="quiz">
+    <p class="quiz-question">What does <code>:- phase(strategy), not has_action_steps.</code> mean?</p>
+    <button class="quiz-option" data-correct="false">If we're in strategy phase, mark that action steps are missing</button>
+    <button class="quiz-option" data-correct="true">It's impossible to be in strategy phase without action steps (eliminates that answer set)</button>
+    <button class="quiz-option" data-correct="false">Define has_action_steps when we're in strategy phase</button>
+    <p class="quiz-explanation">Correct! Integrity constraints eliminate answer sets where their body is true. This guarantees that any valid answer set in the strategy phase MUST include action steps.</p>
+  </div>
+
+  <div class="nav-buttons">
+    <span class="nav-btn nav-prev">&larr; Previous</span>
+    <span class="nav-btn nav-next">Next: ASP in Practice &rarr;</span>
+  </div>
+</section>
+
+<!-- Chapters 6-11 and ref will be added next -->
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
